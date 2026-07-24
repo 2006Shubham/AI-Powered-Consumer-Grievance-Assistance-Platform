@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     imagekit_url_endpoint: str = ""
     qdrant_url: str = ""
     qdrant_api_key: str = ""
+    demo_user_email: str = "demo@example.com"
+    demo_user_password: str = "password123"
 
     model_config = SettingsConfigDict(
         env_file=".env",

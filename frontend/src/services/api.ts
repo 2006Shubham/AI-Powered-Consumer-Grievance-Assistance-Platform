@@ -16,8 +16,8 @@ export interface AuthResponse {
 export interface Case {
   id: string;
   user_id: string;
-  title: str;
-  description: str;
+  title: string;
+  description: string;
   category: string;
   issue_type: string;
   desired_resolution: string;
