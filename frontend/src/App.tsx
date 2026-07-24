@@ -1,9 +1,11 @@
 import React from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CaseProvider, useCases } from './context/CaseContext';
 import { Header } from './components/layout/Header';
 import { Dashboard } from './pages/Dashboard';
 import { NewCaseWizard } from './pages/NewCaseWizard';
 import { CaseDetailsView } from './pages/CaseDetailsView';
+import { AuthView } from './components/AuthView';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useCases();
@@ -17,7 +19,21 @@ const MainContent: React.FC = () => {
   );
 };
 
-export function App() {
+const AuthenticatedApp: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
+        Loading Consumer Grievance Platform...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthView />;
+  }
+
   return (
     <CaseProvider>
       <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col">
@@ -31,12 +47,19 @@ export function App() {
             <div className="flex items-center gap-4">
               <span className="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
               <span className="hover:text-slate-300 cursor-pointer">Terms of Service</span>
-              <span className="hover:text-slate-300 cursor-pointer">E-Daakhil API Docs</span>
             </div>
           </div>
         </footer>
       </div>
     </CaseProvider>
+  );
+};
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AuthenticatedApp />
+    </AuthProvider>
   );
 }
 

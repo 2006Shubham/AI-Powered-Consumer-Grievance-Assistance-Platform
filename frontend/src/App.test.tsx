@@ -2,6 +2,21 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import App from './App';
 
+vi.mock('./context/AuthContext', async () => {
+  const actual = await vi.importActual<typeof import('./context/AuthContext')>('./context/AuthContext');
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: { id: 'test-user-1', name: 'Test User', email: 'user@example.com', created_at: '2026-07-24T00:00:00Z' },
+      isAuthenticated: true,
+      isLoading: false,
+      login: vi.fn(),
+      signup: vi.fn(),
+      logout: vi.fn(),
+    }),
+  };
+});
+
 describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
 
   it('renders Dashboard with summary metrics, category filters, and initial cases', () => {
