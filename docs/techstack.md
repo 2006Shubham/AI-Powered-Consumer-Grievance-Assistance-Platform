@@ -87,7 +87,7 @@ AI coding agents must not introduce alternative databases, frameworks, cloud ser
 | AI SDK              | Groq Python SDK          |
 | Data Validation     | Pydantic                 |
 | Embeddings          | Sentence Transformers    |
-| Vector Search       | FAISS                    |
+| Vector Search       | Qdrant Vector Database   |
 | OCR                 | Tesseract OCR            |
 | PDF Processing      | PyMuPDF                  |
 | Authentication      | JWT                      |
@@ -573,9 +573,9 @@ The exact embedding model will be documented in `ai_system.md`.
 
 # 21. Vector Search
 
-## FAISS
+## Qdrant Vector Database
 
-FAISS will initially provide vector similarity search.
+Qdrant Cloud provides scalable, high-performance vector similarity search.
 
 ```text
 Knowledge Documents
@@ -587,54 +587,32 @@ Knowledge Documents
    Embeddings
        │
        ▼
-      FAISS
+ Qdrant Cloud Vector Store
 ```
 
-Reasons for using FAISS:
+Reasons for using Qdrant:
 
-- free,
+- free cloud tier,
 
-- open-source,
+- high performance,
 
-- local,
+- cloud-accessible vector indexing,
 
-- fast,
+- metadata filtering and payload storage,
 
-- simple enough for the project's scale.
-
-The application does not require a hosted vector database for the MVP.
+- fast cosine vector similarity matching.
 
 ---
 
 # 22. Vector Metadata
 
-FAISS stores vectors but application metadata must remain separately manageable.
-
-Example:
-
-```text
-FAISS
-
-Vector #104
-     │
-     ▼
-MongoDB
-
-KnowledgeChunk
-├── chunk_id
-├── source_id
-├── title
-├── text
-└── source_reference
-```
-
-The vector index and MongoDB metadata must share stable identifiers.
+Qdrant stores vector embeddings alongside structured payload metadata directly in point records.
 
 ---
 
 # 23. RAG Stack
 
-The initial RAG system should be implemented using relatively simple components.
+The initial RAG system is implemented using:
 
 ```text
 PyMuPDF
@@ -645,7 +623,7 @@ Custom Chunking
      ↓
 Sentence Transformers
      ↓
-FAISS
+Qdrant Cloud
      ↓
 Retriever
      ↓

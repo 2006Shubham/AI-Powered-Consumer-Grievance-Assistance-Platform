@@ -19,7 +19,7 @@ This document outlines the step-by-step implementation plan for building the **A
 - **Backend**: FastAPI (Python 3.12+) + Pydantic v2 + Motor (Async MongoDB driver)
 - **Database**: MongoDB (Local / Containerized)
 - **LLM Inference**: Groq API (`groq` Python SDK)
-- **Embeddings & Vector Search**: `sentence-transformers` (`all-MiniLM-L6-v2`) + `FAISS`
+- **Embeddings & Vector Search**: `sentence-transformers` (`all-MiniLM-L6-v2`) + `Qdrant` (Qdrant Cloud cluster)
 - **Document Processing & OCR**: `PyMuPDF` + `Tesseract OCR`
 - **Testing & Quality Assurance**: Root `/tests` directory (Pytest + Vitest) + unified `run_tests.bat` / `run_tests.sh` scripts
 - **Containerization**: Docker + Docker Compose

@@ -14,6 +14,7 @@ aiofiles>=23.2.1
 python-multipart>=0.0.9
 imagekitio>=3.0.0
 sentence-transformers>=2.5.0
+qdrant-client>=1.7.0
 faiss-cpu>=1.7.4
 numpy>=1.24.0
 pytest>=8.1.1

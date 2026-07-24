@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     imagekit_private_key: str = ""
     imagekit_public_key: str = ""
     imagekit_url_endpoint: str = ""
+    qdrant_url: str = ""
+    qdrant_api_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
