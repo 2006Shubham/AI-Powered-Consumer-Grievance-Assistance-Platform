@@ -42,3 +42,27 @@ class GroqProvider:
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON from Groq output: {e}")
             raise ValueError(f"Invalid JSON returned by Groq: {str(e)}") from e
+
+    async def generate_text(self, system_prompt: str, user_prompt: str, temperature: float = 0.3) -> str:
+        if not self.client:
+            settings = get_settings()
+            if not settings.groq_api_key:
+                raise ValueError("GROQ_API_KEY environment variable is not configured.")
+            self.client = AsyncGroq(api_key=settings.groq_api_key)
+
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=temperature
+            )
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Received empty response from Groq API")
+            return content
+        except GroqError as e:
+            logger.error(f"Groq API call failed: {e}")
+            raise RuntimeError(f"Groq API Error: {str(e)}") from e

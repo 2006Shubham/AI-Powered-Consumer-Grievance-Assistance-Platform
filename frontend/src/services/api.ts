@@ -205,6 +205,30 @@ class ApiService {
   async getTimeline(caseId: string): Promise<any[]> {
     return this.request(`/cases/${caseId}/timeline`);
   }
+
+  // Complaint Generator Methods
+  async generateComplaint(caseId: string, customInstructions?: string): Promise<any> {
+    return this.request(`/cases/${caseId}/complaint/generate`, {
+      method: 'POST',
+      body: JSON.stringify({ custom_instructions: customInstructions }),
+    });
+  }
+
+  async getComplaint(caseId: string): Promise<any> {
+    return this.request(`/cases/${caseId}/complaint`);
+  }
+
+  async updateComplaint(caseId: string, content: string, title?: string): Promise<any> {
+    return this.request(`/cases/${caseId}/complaint`, {
+      method: 'PUT',
+      body: JSON.stringify({ content, title }),
+    });
+  }
+
+  getComplaintExportUrl(caseId: string, format: 'txt' | 'pdf' = 'txt'): string {
+    const token = this.getToken();
+    return `${API_BASE_URL}/cases/${caseId}/complaint/export?format=${format}&token=${token}`;
+  }
 }
 
 export const api = new ApiService();

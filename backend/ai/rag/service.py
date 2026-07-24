@@ -45,9 +45,11 @@ Required JSON Schema:
 Produce ONLY valid JSON.
 """
 
+from backend.shared.database import get_database
+
 class RAGService:
-    def __init__(self, db: AsyncIOMotorDatabase):
-        self.db = db
+    def __init__(self, db: AsyncIOMotorDatabase = None):
+        self.db = db if db is not None else get_database()
         self.vector_store = initialize_vector_database()
         self.encoder = EmbeddingService()
         self.provider = GroqProvider()

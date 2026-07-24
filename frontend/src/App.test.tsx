@@ -103,9 +103,8 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
     fireEvent.click(noticeBtn);
 
     // Modal should open
-    expect(screen.getByText(/AI Generated Legal Complaint Notice/i)).toBeInTheDocument();
-    expect(screen.getByText(/Copy to Clipboard/i)).toBeInTheDocument();
-    expect(screen.getByText(/Download \(\.txt\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI Formal Legal Notice & Complaint Generator/i)).toBeInTheDocument();
+    expect(screen.getByText(/Generate Legal Notice Draft/i)).toBeInTheDocument();
   });
 
 });

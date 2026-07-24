@@ -16,6 +16,7 @@ imagekitio>=3.0.0
 sentence-transformers>=2.5.0
 qdrant-client>=1.7.0
 faiss-cpu>=1.7.4
+PyMuPDF>=1.23.0
 numpy>=1.24.0
 pytest>=8.1.1
 pytest-asyncio>=0.23.6
