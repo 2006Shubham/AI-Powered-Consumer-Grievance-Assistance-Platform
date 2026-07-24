@@ -84,3 +84,28 @@ async def submit_user_answers(
     ai_service = AIService(db)
     result = await ai_service.process_user_answers(case_id, answers_input)
     return result
+
+from backend.ai.rag.service import RAGService, RAGGuidanceResponse
+
+@router.post("/guidance", response_model=RAGGuidanceResponse)
+async def get_grounded_legal_guidance(
+    case_id: str,
+    current_user: UserResponse = Depends(get_current_user)
+):
+    db = get_database()
+    case_doc = await verify_case_ownership(case_id, current_user, db)
+    
+    rag_service = RAGService(db)
+    try:
+        guidance = await rag_service.generate_grounded_guidance(
+            case_id=case_id,
+            title=case_doc["title"],
+            description=case_doc["description"],
+            category=case_doc.get("category", "general_service")
+        )
+        return guidance
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"RAG Legal Guidance generation failed: {str(e)}"
+        )

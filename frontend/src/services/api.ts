@@ -151,6 +151,15 @@ class ApiService {
     });
   }
 
+  async getAIGuidance(caseId: string): Promise<{
+    summary_analysis: string;
+    applicable_laws: Array<{ title: string; source: string; summary: string }>;
+    recommended_remedies: string[];
+    next_steps: string[];
+  }> {
+    return this.request(`/cases/${caseId}/ai/guidance`, { method: 'POST' });
+  }
+
   // Evidence Management Methods
   async uploadEvidence(caseId: string, file: File, evidenceType: string = 'other'): Promise<any> {
     const token = this.getToken();

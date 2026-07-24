@@ -6,7 +6,12 @@ echo "Running Consumer Grievance Platform Test Suite"
 echo "========================================================"
 echo ""
 echo "[1/2] Running Backend Pytest Suite..."
-PYTHONPATH=. python -m pytest tests/ --tb=short
+if [ -d ".venv" ]; then
+    echo "Using isolated virtual environment (.venv)..."
+    PYTHONPATH=. .venv/bin/python -m pytest tests/ --tb=short
+else
+    PYTHONPATH=. python3 -m pytest tests/ --tb=short
+fi
 
 echo ""
 echo "[2/2] Running Frontend Vitest Suite..."
