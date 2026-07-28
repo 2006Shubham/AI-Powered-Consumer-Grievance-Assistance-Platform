@@ -8,6 +8,7 @@ from backend.ai.router import router as ai_router
 from backend.evidence.router import router as evidence_router
 from backend.timeline.router import router as timeline_router
 from backend.complaints.router import router as complaints_router
+from backend.documents.router import router as documents_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,6 +41,7 @@ app.include_router(ai_router, prefix="/api/v1")
 app.include_router(evidence_router, prefix="/api/v1")
 app.include_router(timeline_router, prefix="/api/v1")
 app.include_router(complaints_router, prefix="/api/v1")
+app.include_router(documents_router, prefix="/api/v1")
 
 @app.get("/api/v1/health", tags=["Health"])
 async def health_check():

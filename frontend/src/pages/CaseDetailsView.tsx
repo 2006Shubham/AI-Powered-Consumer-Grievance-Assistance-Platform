@@ -7,6 +7,7 @@ import {
 import { useCases } from '../context/CaseContext';
 import { CategoryBadge, StatusBadge, UrgencyBadge } from '../components/common/Badge';
 import { ComplaintGeneratorModal } from '../components/ComplaintGeneratorModal';
+import { SmartEvidenceChecklist } from '../components/SmartEvidenceChecklist';
 
 export const CaseDetailsView: React.FC = () => {
   const { activeCaseId, getCaseById, setActiveTab, updateCaseStatus } = useCases();
@@ -224,6 +225,9 @@ export const CaseDetailsView: React.FC = () => {
             </div>
 
           </div>
+
+          {/* Smart Evidence Checklist */}
+          <SmartEvidenceChecklist caseId={currentCase.id} />
 
           {/* Evidence Attachments */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">

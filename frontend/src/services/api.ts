@@ -229,6 +229,17 @@ class ApiService {
     const token = this.getToken();
     return `${API_BASE_URL}/cases/${caseId}/complaint/export?format=${format}&token=${token}`;
   }
+
+  // Evidence Intelligence & OCR Methods
+  async processEvidenceOCR(caseId: string, evidenceId: string): Promise<any> {
+    return this.request(`/cases/${caseId}/evidence/${evidenceId}/process`, {
+      method: 'POST',
+    });
+  }
+
+  async getEvidenceChecklist(caseId: string): Promise<any> {
+    return this.request(`/cases/${caseId}/evidence-checklist`);
+  }
 }
 
 export const api = new ApiService();
