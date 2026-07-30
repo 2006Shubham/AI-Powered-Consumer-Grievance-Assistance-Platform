@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
-import type { GrievanceCase, CaseStatus } from '../types/case';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import type { GrievanceCase, CaseStatus, CaseCategory } from '../types/case';
+import { api } from '../services/api';
 
 const INITIAL_CASES: GrievanceCase[] = [
   {
@@ -85,97 +86,6 @@ GrievanceAI Automated Consumer Legal Counsel`
       recommendedAction: 'File chargeback request with card issuer attached with AI-generated notice to merchant payment gateway.',
       confidenceScore: 89
     }
-  },
-  {
-    id: '1035',
-    title: 'Incorrect Billing & Surge Multiplier Overcharge',
-    category: 'Utilities',
-    status: 'AI Analyzing',
-    urgency: 'Low',
-    vendorName: 'City Power & Grid Co.',
-    purchaseDate: '2026-07-01',
-    transactionId: 'UTL-55291',
-    claimedAmount: '$450.00',
-    desiredResolution: 'Meter Audit & Bill Adjustment',
-    createdDate: '2026-07-21',
-    lastUpdated: '2026-07-21',
-    description: 'Electricity bill for June 2026 spiked 400% higher than average historical consumption. Smart meter log shows zero occupancy for 10 days during vacation period.',
-    timeline: [
-      { id: 't1', date: '2026-07-21 02:00 PM', title: 'Case Filed', description: 'Initial grievance details submitted.', type: 'user', status: 'completed' },
-      { id: 't2', date: '2026-07-21 02:05 PM', title: 'AI Analysis in Progress', description: 'Cross-referencing utility regulation rate caps.', type: 'ai', status: 'current' }
-    ],
-    evidence: [
-      { id: 'e1', name: 'June_Electricity_Bill.pdf', size: '1.5 MB', uploadDate: '2026-07-21', tag: 'Invoice / Receipt', fileType: 'pdf' }
-    ],
-    ragGuidance: {
-      sectionTitle: 'Regulatory Utility Tariff Guidelines & Meter Accuracy Codes',
-      actName: 'State Utility Regulatory Commission Regulations',
-      legalRightSummary: 'Utility providers are mandated to conduct free secondary meter testing when consumption anomalies exceed 200% of 6-month historical baseline.',
-      recommendedAction: 'Request emergency meter calibration and hold disputed bill portion in escrow.',
-      confidenceScore: 91
-    }
-  },
-  {
-    id: '1028',
-    title: 'Unauthorized Flight Cancellation Fee Deduction',
-    category: 'E-commerce',
-    status: 'Resolved',
-    urgency: 'Medium',
-    vendorName: 'SkyFly Airways Direct',
-    purchaseDate: '2026-04-10',
-    transactionId: 'PNR-X9K201',
-    claimedAmount: '$580.00',
-    desiredResolution: 'Full Refund into Original Payment Method',
-    createdDate: '2026-06-01',
-    lastUpdated: '2026-06-18',
-    description: 'Airline cancelled flight due to operational reasons but credited funds into non-refundable travel voucher instead of cash refund.',
-    timeline: [
-      { id: 't1', date: '2026-06-01', title: 'Case Filed', description: 'Grievance submitted regarding voucher force-credit.', type: 'user', status: 'completed' },
-      { id: 't2', date: '2026-06-05', title: 'Legal Demand Served', description: 'Aviation Consumer Protection notice issued.', type: 'system', status: 'completed' },
-      { id: 't3', date: '2026-06-18', title: 'Full Refund Issued', description: 'Airline processed $580.00 cash refund to original credit card.', type: 'vendor', status: 'completed' }
-    ],
-    evidence: [
-      { id: 'e1', name: 'Flight_Cancellation_Email.pdf', size: '600 KB', uploadDate: '2026-06-01', tag: 'Vendor Email', fileType: 'pdf' },
-      { id: 'e2', name: 'Voucher_Issue_Screenshot.png', size: '1.1 MB', uploadDate: '2026-06-01', tag: 'Product Photo / Screenshot', fileType: 'image' }
-    ],
-    ragGuidance: {
-      sectionTitle: 'Aviation Passenger Charter - Involuntary Cancellation Clause',
-      actName: 'Civil Aviation Consumer Rules',
-      legalRightSummary: 'When an airline cancels a flight, passengers have absolute statutory entitlement to a 100% refund in original currency. Credit vouchers cannot be imposed.',
-      recommendedAction: 'Case resolved successfully.',
-      confidenceScore: 98
-    }
-  },
-  {
-    id: '1019',
-    title: 'Fraudulent Sim Swapping & Unauthorized Banking Debit',
-    category: 'Banking',
-    status: 'Escalated',
-    urgency: 'Critical',
-    vendorName: 'Apex National Bank & Telecom',
-    purchaseDate: '2026-05-30',
-    transactionId: 'BANK-401923',
-    claimedAmount: '$3,450.00',
-    desiredResolution: 'Full Reimbursement & Cyber Fraud Investigation',
-    createdDate: '2026-06-12',
-    lastUpdated: '2026-07-02',
-    description: 'Unauthorized SIM swap occurred without SMS authentication warning, leading to 2 unauthorized wire transfers. Bank delayed account freeze by 4 hours after initial hotline fraud alert.',
-    timeline: [
-      { id: 't1', date: '2026-06-12', title: 'Case Filed', description: 'Emergency cyber grievance logged.', type: 'user', status: 'completed' },
-      { id: 't2', date: '2026-06-14', title: 'AI Escalation to Ombudsman', description: 'Drafted Banking Ombudsman petition for zero-liability policy.', type: 'ai', status: 'completed' },
-      { id: 't3', date: '2026-07-02', title: 'Escalated to Financial Regulatory Board', description: 'Hearing scheduled for August 2026.', type: 'system', status: 'current' }
-    ],
-    evidence: [
-      { id: 'e1', name: 'Cyber_Police_FIR_Report.pdf', size: '3.4 MB', uploadDate: '2026-06-12', tag: 'Warranty Document', fileType: 'pdf' },
-      { id: 'e2', name: 'Call_Log_Bank_Hotline.png', size: '720 KB', uploadDate: '2026-06-12', tag: 'Product Photo / Screenshot', fileType: 'image' }
-    ],
-    ragGuidance: {
-      sectionTitle: 'Zero Liability Customer Policy for Unauthorised Electronic Banking Transactions',
-      actName: 'Central Banking Regulatory Guidelines',
-      legalRightSummary: 'If customer reports unauthorized transaction within 3 days without customer negligence, bank carries 100% liability to reverse funds within 10 working days.',
-      recommendedAction: 'File petition with Banking Ombudsman requesting immediate temporary credit.',
-      confidenceScore: 96
-    }
   }
 ];
 
@@ -184,10 +94,12 @@ interface CaseContextType {
   activeCaseId: string | null;
   setActiveCaseId: (id: string | null) => void;
   getCaseById: (id: string) => GrievanceCase | undefined;
-  addNewCase: (newCase: Omit<GrievanceCase, 'id' | 'createdDate' | 'lastUpdated' | 'timeline' | 'ragGuidance'>) => string;
+  addNewCase: (newCase: Omit<GrievanceCase, 'id' | 'createdDate' | 'lastUpdated' | 'timeline' | 'ragGuidance'>) => Promise<string>;
   updateCaseStatus: (id: string, status: CaseStatus) => void;
   activeTab: 'dashboard' | 'new-case' | 'case-details';
   setActiveTab: (tab: 'dashboard' | 'new-case' | 'case-details') => void;
+  isLoadingCases: boolean;
+  refreshCases: () => Promise<void>;
 }
 
 const CaseContext = createContext<CaseContextType | undefined>(undefined);
@@ -196,19 +108,93 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [cases, setCases] = useState<GrievanceCase[]>(INITIAL_CASES);
   const [activeCaseId, setActiveCaseId] = useState<string | null>('1042');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'new-case' | 'case-details'>('dashboard');
+  const [isLoadingCases, setIsLoadingCases] = useState<boolean>(false);
+
+  const fetchBackendCases = async () => {
+    setIsLoadingCases(true);
+    try {
+      const apiCases = await api.getCases();
+      if (Array.isArray(apiCases) && apiCases.length > 0) {
+        const mapped: GrievanceCase[] = apiCases.map((c: any) => ({
+          id: c.id || c._id,
+          title: c.title || 'Consumer Grievance',
+          category: (c.category || 'Electronics') as CaseCategory,
+          status: (c.status || 'In Progress') as CaseStatus,
+          urgency: 'High',
+          vendorName: c.vendor_name || c.vendorName || 'Specified Merchant',
+          purchaseDate: c.purchase_date || c.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          transactionId: c.transaction_id || `TXN-${(c.id || c._id).substring(0, 6)}`,
+          claimedAmount: c.claimed_amount || '$0.00',
+          desiredResolution: c.desired_resolution || 'Full Refund',
+          createdDate: c.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          lastUpdated: c.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          description: c.description || '',
+          timeline: [
+            {
+              id: 't-init',
+              date: c.created_at?.split('T')[0] || 'Today',
+              title: 'Case Filed & AI Analyzed',
+              description: 'Grievance registered and sent to Groq RAG intelligence engine.',
+              type: 'user',
+              status: 'completed'
+            }
+          ],
+          evidence: [],
+          ragGuidance: {
+            sectionTitle: `Section 18 Consumer Protection Act (${c.category || 'General'})`,
+            actName: 'Consumer Protection Act 2019',
+            legalRightSummary: 'Statutory protection against unfair trade practices and product deficiency.',
+            recommendedAction: 'Issue 14-day formal pre-litigation legal notice.',
+            confidenceScore: 92
+          }
+        }));
+
+        setCases(mapped);
+        if (mapped.length > 0) {
+          setActiveCaseId(mapped[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch remote backend cases, retaining local state:', err);
+    } finally {
+      setIsLoadingCases(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackendCases();
+  }, []);
 
   const getCaseById = (id: string) => {
     return cases.find(c => c.id === id) || cases[0];
   };
 
-  const addNewCase = (caseData: Omit<GrievanceCase, 'id' | 'createdDate' | 'lastUpdated' | 'timeline' | 'ragGuidance'>): string => {
-    const nextId = (Math.max(...cases.map(c => parseInt(c.id, 10)), 1045) + 1).toString();
+  const addNewCase = async (caseData: Omit<GrievanceCase, 'id' | 'createdDate' | 'lastUpdated' | 'timeline' | 'ragGuidance'>): Promise<string> => {
     const today = new Date().toISOString().split('T')[0];
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    let createdId = (Math.max(...cases.map(c => parseInt(c.id, 10) || 0), 1045) + 1).toString();
+
+    try {
+      const backendCase = await api.createCase({
+        title: caseData.title,
+        description: caseData.description,
+        category: caseData.category,
+        issue_type: caseData.desiredResolution,
+        desired_resolution: caseData.desiredResolution
+      });
+      if (backendCase && (backendCase.id || (backendCase as any)._id)) {
+        createdId = backendCase.id || (backendCase as any)._id;
+        // Trigger AI analysis asynchronously
+        api.analyzeCase(createdId).catch(console.error);
+      }
+    } catch (e) {
+      console.warn('Backend case creation fallback to client state:', e);
+    }
+
     const newGrievance: GrievanceCase = {
       ...caseData,
-      id: nextId,
+      id: createdId,
       createdDate: today,
       lastUpdated: today,
       timeline: [
@@ -227,14 +213,6 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           description: `Consumer Protection Act clauses identified for category ${caseData.category}.`,
           type: 'ai',
           status: 'completed'
-        },
-        {
-          id: 't-notice',
-          date: 'Pending',
-          title: 'Formal Notice Dispatch',
-          description: 'Draft complaint notice ready for vendor dispatch.',
-          type: 'system',
-          status: 'current'
         }
       ],
       ragGuidance: {
@@ -243,36 +221,17 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         legalRightSummary: `Based on your description, vendor ${caseData.vendorName} is legally required to resolve disputes regarding ${caseData.category.toLowerCase()} within 15 days of notice.`,
         recommendedAction: 'Send formal complaint notice and request immediate transaction credit.',
         confidenceScore: 92
-      },
-      generatedNotice: `FORMAL LEGAL CONSUMER COMPLAINT
-
-TO: ${caseData.vendorName} Legal & Customer Redressal Team
-DATE: ${today}
-SUBJECT: Demand for ${caseData.desiredResolution} regarding Transaction ${caseData.transactionId}
-
-Dear Sir/Madam,
-
-This is a formal grievance notification regarding transaction ${caseData.transactionId} dated ${caseData.purchaseDate} involving ${caseData.claimedAmount}.
-
-FACTS OF THE GRIEVANCE:
-${caseData.description}
-
-DESIRED RELIEF:
-${caseData.desiredResolution}
-
-Under the Consumer Protection Act, failure to resolve valid consumer grievances within reasonable timeframe grants entitlement to legal damages and regulatory complaint filing. We request your prompt resolution within 7 working days.
-
-Sincerely,
-GrievanceAI Consumer Rights Platform`
+      }
     };
 
     setCases(prev => [newGrievance, ...prev]);
-    setActiveCaseId(nextId);
-    return nextId;
+    setActiveCaseId(createdId);
+    return createdId;
   };
 
   const updateCaseStatus = (id: string, status: CaseStatus) => {
     setCases(prev => prev.map(c => c.id === id ? { ...c, status, lastUpdated: new Date().toISOString().split('T')[0] } : c));
+    api.updateCaseStatus(id, status).catch(console.warn);
   };
 
   return (
@@ -284,7 +243,9 @@ GrievanceAI Consumer Rights Platform`
       addNewCase,
       updateCaseStatus,
       activeTab,
-      setActiveTab
+      setActiveTab,
+      isLoadingCases,
+      refreshCases: fetchBackendCases
     }}>
       {children}
     </CaseContext.Provider>

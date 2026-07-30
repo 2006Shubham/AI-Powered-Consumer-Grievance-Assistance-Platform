@@ -160,6 +160,13 @@ class ApiService {
     return this.request(`/cases/${caseId}/ai/guidance`, { method: 'POST' });
   }
 
+  async askAIChat(caseId: string, query: string): Promise<{ answer: string; sources: string[] }> {
+    return this.request(`/cases/${caseId}/ai/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    });
+  }
+
   // Evidence Management Methods
   async uploadEvidence(caseId: string, file: File, evidenceType: string = 'other'): Promise<any> {
     const token = this.getToken();

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import App from './App';
 
@@ -23,11 +23,11 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
     render(<App />);
 
     // Header check
-    expect(screen.getByText(/AI-Powered Consumer Rights Assistance/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI Consumer Protection Platform/i)).toBeInTheDocument();
 
     // Summary metrics check
     expect(screen.getByText('Total Cases')).toBeInTheDocument();
-    expect(screen.getByText('Pending Action')).toBeInTheDocument();
+    expect(screen.getAllByText('Pending Info')[0]).toBeInTheDocument();
     expect(screen.getByText('Resolved Cases')).toBeInTheDocument();
 
     // Check pre-populated case cards
@@ -50,8 +50,6 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
   });
 
   it('navigates to New Case Wizard and performs AI Case Analysis flow', async () => {
-    vi.useFakeTimers();
-
     render(<App />);
 
     // Click New Case tab button in header
@@ -59,7 +57,7 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
     fireEvent.click(newCaseBtns[0]);
 
     // Verify Wizard rendered
-    expect(screen.getByText(/1. Describe Your Problem in Natural Language/i)).toBeInTheDocument();
+    expect(screen.getByText(/1. Describe Your Issue in Plain Language/i)).toBeInTheDocument();
 
     // Fill grievance description
     const textarea = screen.getByPlaceholderText(/Explain what happened/i);
@@ -69,26 +67,28 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
     const analyzeBtn = screen.getByRole('button', { name: /Analyze Case with AI/i });
     fireEvent.click(analyzeBtn);
 
-    // Fast-forward AI analysis timeouts (2500ms)
-    act(() => {
-      vi.advanceTimersByTime(2500);
+    // Fast-forward AI analysis step
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 2000));
     });
 
     // Check Step 2 facts step mounted
-    expect(screen.getByText(/2. AI Extracted Facts & Follow-up Details/i)).toBeInTheDocument();
+    expect(screen.getByText(/2. AI Extracted Case Facts/i)).toBeInTheDocument();
 
     // Fill mandatory vendor name
     const vendorInput = screen.getByPlaceholderText(/e.g., ElectroTech Megastore/i);
     fireEvent.change(vendorInput, { target: { value: 'TechCorp Electronics' } });
 
     // Click submit button directly
-    const submitBtn = screen.getByRole('button', { name: /Submit Case & Generate Notice/i });
-    fireEvent.click(submitBtn);
+    const submitBtn = screen.getByRole('button', { name: /Submit Case & View Details/i });
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
 
     // Verify transition to Case Details View
-    expect(screen.getByRole('heading', { name: /RAG Legal Intelligence/i })).toBeInTheDocument();
-
-    vi.useRealTimers();
+    await waitFor(() => {
+      expect(screen.getAllByText(/RAG Legal Intelligence/i)[0]).toBeInTheDocument();
+    });
   });
 
   it('opens and closes the AI Complaint Generator modal', async () => {
@@ -98,12 +98,12 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
     const caseCard = screen.getByText('#1042');
     fireEvent.click(caseCard);
 
-    // Click View / Edit Legal Notice
-    const noticeBtn = screen.getByRole('button', { name: /View \/ Edit Legal Notice/i });
+    // Click Generate Legal Notice
+    const noticeBtn = screen.getByRole('button', { name: /Generate Legal Notice/i });
     fireEvent.click(noticeBtn);
 
     // Modal should open
-    expect(screen.getByText(/AI Formal Legal Notice & Complaint Generator/i)).toBeInTheDocument();
+    expect(screen.getByText(/Formal Consumer Legal Notice Generator/i)).toBeInTheDocument();
     expect(screen.getByText(/Generate Legal Notice Draft/i)).toBeInTheDocument();
   });
 

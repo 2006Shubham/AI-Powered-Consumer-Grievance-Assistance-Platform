@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from backend.cases.models import CaseCreate, CaseStatusEnum
 
+from backend.shared.database import safe_object_id
+
 class CaseRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
@@ -11,8 +13,9 @@ class CaseRepository:
 
     async def create_case(self, user_id: str, case_data: CaseCreate) -> dict:
         now = datetime.now(timezone.utc)
+        u_id = safe_object_id(user_id)
         doc = {
-            "user_id": ObjectId(user_id),
+            "user_id": u_id,
             "title": case_data.title.strip(),
             "description": case_data.description.strip(),
             "category": case_data.category.lower().strip(),
@@ -28,7 +31,7 @@ class CaseRepository:
         # Record timeline event
         await self.timeline_collection.insert_one({
             "case_id": result.inserted_id,
-            "user_id": ObjectId(user_id),
+            "user_id": u_id,
             "event_type": "case_created",
             "description": f"Case '{case_data.title}' created.",
             "created_at": now
@@ -37,14 +40,13 @@ class CaseRepository:
         return doc
 
     async def get_cases_by_user(self, user_id: str) -> List[dict]:
-        cursor = self.collection.find({"user_id": ObjectId(user_id)}).sort("created_at", -1)
+        u_id = safe_object_id(user_id)
+        cursor = self.collection.find({"$or": [{"user_id": u_id}, {"user_id": user_id}]}).sort("created_at", -1)
         return await cursor.to_list(length=500)
 
     async def get_case_by_id(self, case_id: str) -> Optional[dict]:
-        try:
-            return await self.collection.find_one({"_id": ObjectId(case_id)})
-        except Exception:
-            return None
+        c_id = safe_object_id(case_id)
+        return await self.collection.find_one({"$or": [{"_id": c_id}, {"_id": case_id}]})
 
     async def update_case_status(self, case_id: str, new_status: str) -> Optional[dict]:
         now = datetime.now(timezone.utc)

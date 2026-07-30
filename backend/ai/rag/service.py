@@ -8,6 +8,7 @@ from backend.ai.providers.groq import GroqProvider
 from backend.ai.rag.embeddings import EmbeddingService
 from backend.ai.rag.ingestion import initialize_vector_database
 from backend.shared.config import get_settings
+from backend.shared.database import safe_object_id
 
 class RAGGuidanceResponse(BaseModel):
     summary_analysis: str = Field(..., description="Analysis of user complaint against statutory rights")
@@ -87,9 +88,10 @@ Analyze the complaint and return structured JSON legal guidance based on the ret
         # Save analysis in MongoDB
         settings = get_settings()
         now = datetime.now(timezone.utc)
+        safe_c_id = safe_object_id(case_id)
 
         await self.db.ai_analyses.insert_one({
-            "case_id": ObjectId(case_id),
+            "case_id": safe_c_id,
             "analysis_type": "rag_legal_guidance",
             "provider": "groq",
             "model": settings.groq_model,
@@ -100,7 +102,7 @@ Analyze the complaint and return structured JSON legal guidance based on the ret
 
         # Record Timeline Event
         await self.db.timeline_events.insert_one({
-            "case_id": ObjectId(case_id),
+            "case_id": safe_c_id,
             "event_type": "rag_guidance_generated",
             "description": f"AI Grounded Legal Guidance generated using {len(retrieved_docs)} statutory provisions.",
             "created_at": now

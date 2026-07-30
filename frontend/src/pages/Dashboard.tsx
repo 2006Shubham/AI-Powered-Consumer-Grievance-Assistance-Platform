@@ -53,28 +53,27 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-12">
+    <div className="space-y-6 animate-fadeIn pb-12">
       
-      {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/40 via-slate-900 to-slate-900 border border-indigo-500/20 p-6 sm:p-8">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" /> AI Legal Assistant Active
+      {/* Header Banner */}
+      <div className="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" /> Grounded RAG Legal Engine
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Consumer Grievance Resolution Hub
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Consumer Grievance Dashboard
             </h1>
-            <p className="text-sm text-slate-300">
-              Automated RAG guidance, instant legal notice drafting, and statutory Consumer Protection Act enforcement.
+            <p className="text-sm text-slate-600">
+              Manage your active grievances, review statutory legal advice, and generate formal notices.
             </p>
           </div>
           <button
             onClick={() => setActiveTab('new-case')}
-            className="flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition-all shrink-0"
           >
-            <PlusCircle className="w-5 h-5" />
+            <PlusCircle className="w-4 h-4" />
             <span>Create New Case</span>
           </button>
         </div>
@@ -83,62 +82,62 @@ export const Dashboard: React.FC = () => {
       {/* Metrics Summary Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Total Cases</span>
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
-              <FileText className="w-5 h-5" />
+            <span className="text-xs font-medium text-slate-500">Total Cases</span>
+            <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
+              <FileText className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold text-white">{totalCases}</span>
-            <span className="text-xs text-slate-400 ml-2">Logged</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">{totalCases}</span>
+            <span className="text-xs text-slate-500 ml-2">Logged</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Pending Action</span>
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-              <Clock className="w-5 h-5" />
+            <span className="text-xs font-medium text-slate-500">Pending Info</span>
+            <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
+              <Clock className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold text-amber-400">{pendingAction}</span>
-            <span className="text-xs text-slate-400 ml-2">Requires input</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-amber-600">{pendingAction}</span>
+            <span className="text-xs text-slate-500 ml-2">Action required</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">In Progress / Escalated</span>
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
-              <AlertTriangle className="w-5 h-5" />
+            <span className="text-xs font-medium text-slate-500">In Progress</span>
+            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+              <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold text-blue-400">{inProgress}</span>
-            <span className="text-xs text-slate-400 ml-2">Active legal notices</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-blue-600">{inProgress}</span>
+            <span className="text-xs text-slate-500 ml-2">Active notices</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Resolved Cases</span>
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-              <CheckCircle2 className="w-5 h-5" />
+            <span className="text-xs font-medium text-slate-500">Resolved Cases</span>
+            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-bold text-emerald-400">{resolved}</span>
-            <span className="text-xs text-slate-400 ml-2">100% refund recovered</span>
+            <span className="text-2xl sm:text-3xl font-extrabold text-emerald-600">{resolved}</span>
+            <span className="text-xs text-slate-500 ml-2">Settled</span>
           </div>
         </div>
 
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 space-y-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-4 shadow-xs">
         
         <div className="flex flex-col md:flex-row items-center gap-4">
           
@@ -147,10 +146,10 @@ export const Dashboard: React.FC = () => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by case #, grievance title, or vendor name..."
+              placeholder="Search by case #, title, or vendor..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all"
             />
           </div>
 
@@ -160,7 +159,7 @@ export const Dashboard: React.FC = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 w-full md:w-48"
+              className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-indigo-600 w-full md:w-48"
             >
               <option value="All">All Statuses</option>
               {statusList.filter(s => s !== 'All').map(st => (
@@ -180,8 +179,8 @@ export const Dashboard: React.FC = () => {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                 selectedCategory === cat
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
               {cat}
@@ -191,15 +190,15 @@ export const Dashboard: React.FC = () => {
 
       </div>
 
-      {/* Case Cards Responsive Grid */}
+      {/* Case Cards Grid */}
       {filteredCases.length === 0 ? (
-        <div className="text-center py-16 bg-slate-900/40 rounded-2xl border border-slate-800 space-y-3">
-          <ShieldCheck className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-lg font-bold text-slate-300">No cases match your filters</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">Try adjusting your search keywords or clearing the category filter.</p>
+        <div className="text-center py-16 bg-white rounded-2xl border border-slate-200 space-y-3 shadow-xs">
+          <ShieldCheck className="w-10 h-10 text-slate-400 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800">No cases match your filter</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">Try clearing search terms or status filters.</p>
           <button
             onClick={() => { setSearchQuery(''); setSelectedCategory('All'); setSelectedStatus('All'); }}
-            className="text-xs text-indigo-400 font-semibold hover:underline"
+            className="text-xs text-indigo-600 font-semibold hover:underline"
           >
             Reset Filters
           </button>
@@ -212,15 +211,15 @@ export const Dashboard: React.FC = () => {
               <div
                 key={c.id}
                 onClick={() => handleCaseClick(c.id)}
-                className="group relative bg-slate-900/80 border border-slate-800/90 hover:border-indigo-500/50 rounded-2xl p-5 space-y-4 hover:shadow-2xl hover:shadow-indigo-500/10 cursor-pointer transition-all duration-200 flex flex-col justify-between"
+                className="group bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-5 space-y-4 hover:shadow-md cursor-pointer transition-all duration-150 flex flex-col justify-between"
               >
                 <div>
                   
                   {/* Card Header: Case # & Status */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800/50 px-2 py-0.5 rounded">
-                        #{c.id}
+                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                        #{c.id.length > 8 ? c.id.substring(0, 8) : c.id}
                       </span>
                       <CategoryBadge category={c.category} />
                     </div>
@@ -228,35 +227,35 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-semibold text-slate-100 text-base group-hover:text-indigo-300 transition-colors line-clamp-2">
+                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug">
                     {c.title}
                   </h3>
 
                   {/* Description snippet */}
-                  <p className="text-xs text-slate-400 mt-2 line-clamp-2">
+                  <p className="text-xs text-slate-500 mt-2 line-clamp-2 leading-relaxed">
                     {c.description}
                   </p>
 
                 </div>
 
-                <div className="space-y-4 pt-2 border-t border-slate-800/80">
+                <div className="space-y-3.5 pt-3 border-t border-slate-100">
                   
                   {/* Vendor & Amount metadata */}
-                  <div className="flex items-center justify-between text-xs text-slate-300 font-medium">
-                    <span className="text-slate-400 truncate max-w-[150px]">{c.vendorName}</span>
-                    <span className="text-emerald-400 font-bold">{c.claimedAmount}</span>
+                  <div className="flex items-center justify-between text-xs text-slate-700 font-medium">
+                    <span className="text-slate-500 truncate max-w-[140px]">{c.vendorName}</span>
+                    <span className="text-slate-900 font-bold">{c.claimedAmount}</span>
                   </div>
 
                   {/* Progress Bar */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400">Current Stage</span>
+                      <span className="text-slate-500">Stage Status</span>
                       <StatusBadge status={c.status} />
                     </div>
-                    <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                       <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          c.status === 'Resolved' ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          c.status === 'Resolved' ? 'bg-emerald-500' : 'bg-indigo-600'
                         }`}
                         style={{ width: `${progress}%` }}
                       />
@@ -264,13 +263,13 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Footer metadata */}
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
                     <div className="flex items-center gap-1">
                       <Paperclip className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{c.evidence.length} Evidence Docs</span>
+                      <span>{c.evidence.length} File(s)</span>
                     </div>
-                    <div className="flex items-center gap-1 font-medium text-indigo-400 group-hover:translate-x-1 transition-transform">
-                      <span>View Details</span>
+                    <div className="flex items-center gap-1 font-semibold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
+                      <span>Open Details</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                   </div>

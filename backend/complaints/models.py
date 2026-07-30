@@ -13,6 +13,10 @@ class ComplaintCreateInput(BaseModel):
         None,
         description="Optional user instructions for tone or specific demands (e.g. refund vs replacement)"
     )
+    user_answers: Optional[List[Dict[str, Any]]] = Field(
+        default_factory=list,
+        description="Optional user answers to follow-up questions"
+    )
 
 class ComplaintUpdateInput(BaseModel):
     title: Optional[str] = None
@@ -36,3 +40,4 @@ class ComplaintResponse(BaseModel):
 class ComplaintExportFormat(str, Enum):
     TXT = "txt"
     PDF = "pdf"
+    MD = "md"

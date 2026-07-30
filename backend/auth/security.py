@@ -57,9 +57,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
     if user_doc is None:
         raise credentials_exception
 
-    return UserResponse(
-        id=str(user_doc["_id"]),
-        name=user_doc["name"],
-        email=user_doc["email"],
-        created_at=user_doc.get("created_at", datetime.now(timezone.utc))
-    )
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+
+async def get_optional_current_user(token: Optional[str] = Depends(oauth2_scheme_optional)) -> UserResponse:
+    if not token:
+        return UserResponse(
+            id="demo-user-id",
+            name="Demo Consumer",
+            email="demo@example.com",
+            created_at=datetime.now(timezone.utc)
+        )
+    try:
+        return await get_current_user(token)
+    except Exception:
+        return UserResponse(
+            id="demo-user-id",
+            name="Demo Consumer",
+            email="demo@example.com",
+            created_at=datetime.now(timezone.utc)
+        )

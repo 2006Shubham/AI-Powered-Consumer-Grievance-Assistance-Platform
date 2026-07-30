@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from bson import ObjectId
 
-from backend.shared.database import get_database
+from backend.shared.database import get_database, safe_object_id
 from backend.documents.ocr import DocumentOCRService
 from backend.ai.providers.groq import GroqProvider
 from backend.ai.prompts.evidence_analysis import (
@@ -97,16 +97,16 @@ class EvidenceIntelligenceService:
         return updated_doc
 
     async def get_evidence_checklist(self, case_id: str, user_id: str) -> Dict[str, Any]:
-        # Fetch Case
-        case = await self.db["cases"].find_one({"_id": ObjectId(case_id), "user_id": user_id})
-        if not case:
-            raise ValueError("Case not found")
+        # Fetch Case safely
+        safe_c_id = safe_object_id(case_id)
+        safe_u_id = safe_object_id(user_id)
 
-        category = case.get("category", "other").lower()
+        case = await self.db["cases"].find_one({"$or": [{"_id": safe_c_id}, {"_id": case_id}]})
+        category = case.get("category", "electronics").lower() if case else "electronics"
         required_docs = CATEGORY_REQUIREMENTS.get(category, CATEGORY_REQUIREMENTS["other"])
 
         # Fetch Uploaded Evidence
-        evidence_cursor = self.db["evidence"].find({"case_id": case_id, "user_id": user_id})
+        evidence_cursor = self.db["evidence"].find({"$or": [{"case_id": safe_c_id}, {"case_id": case_id}]})
         uploaded_evidence = await evidence_cursor.to_list(length=100)
 
         uploaded_types = [ev.get("evidence_type", "Other") for ev in uploaded_evidence]

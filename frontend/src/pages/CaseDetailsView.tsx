@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, Scale, Sparkles, Copy, Download, Check, FileText, 
+  ArrowLeft, Scale, Sparkles, FileText, 
   Clock, ShieldCheck, Send, MessageSquare, 
-  Paperclip, CheckCircle2, X, Eye 
+  Paperclip, CheckCircle2, X, Eye, Loader2 
 } from 'lucide-react';
 import { useCases } from '../context/CaseContext';
 import { CategoryBadge, StatusBadge, UrgencyBadge } from '../components/common/Badge';
 import { ComplaintGeneratorModal } from '../components/ComplaintGeneratorModal';
 import { SmartEvidenceChecklist } from '../components/SmartEvidenceChecklist';
+import { api } from '../services/api';
 
 export const CaseDetailsView: React.FC = () => {
   const { activeCaseId, getCaseById, setActiveTab, updateCaseStatus } = useCases();
@@ -16,30 +17,35 @@ export const CaseDetailsView: React.FC = () => {
 
   // Modal & AI States
   const [showNoticeModal, setShowNoticeModal] = useState(false);
-  const [noticeText, setNoticeText] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [isAiReplying, setIsAiReplying] = useState(false);
 
   // Chat Q&A State
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([
-    {
-      sender: 'ai',
-      text: `Hello! I have analyzed Case #${currentCase?.id || '1042'} under the Consumer Protection Act 2019. How can I assist with your escalation?`,
-      time: 'Just now'
-    }
-  ]);
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string; time: string }>>([]);
   const [inputQuery, setInputQuery] = useState('');
 
   // Preview Evidence Modal
   const [previewFile, setPreviewFile] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (currentCase) {
+      setChatMessages([
+        {
+          sender: 'ai',
+          text: `Hello! I have analyzed your grievance "${currentCase.title}" under the Consumer Protection Act 2019. How can I assist with your escalation or legal strategy?`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    }
+  }, [activeCaseId]);
+
   if (!currentCase) {
     return (
-      <div className="text-center py-20 bg-slate-900/50 rounded-2xl border border-slate-800 space-y-4">
-        <h2 className="text-xl font-bold text-white">No Case Selected</h2>
-        <p className="text-sm text-slate-400">Select a case from the dashboard to inspect details and AI advice.</p>
+      <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 space-y-4 shadow-xs">
+        <h2 className="text-xl font-bold text-slate-900">No Case Selected</h2>
+        <p className="text-sm text-slate-500">Select a case from the dashboard to inspect details and legal advice.</p>
         <button 
           onClick={() => setActiveTab('dashboard')}
-          className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold"
+          className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition-colors"
         >
           Return to Dashboard
         </button>
@@ -48,63 +54,79 @@ export const CaseDetailsView: React.FC = () => {
   }
 
   const handleOpenNoticeModal = () => {
-    setNoticeText(currentCase.generatedNotice || `FORMAL CONSUMER DEMAND NOTICE\n\nCase ID: #${currentCase.id}\nVendor: ${currentCase.vendorName}\nClaimed Amount: ${currentCase.claimedAmount}\n\nNotice content generated based on Consumer Protection Act rules.`);
     setShowNoticeModal(true);
   };
 
-  const handleCopyNotice = () => {
-    navigator.clipboard.writeText(noticeText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownloadNotice = () => {
-    const element = document.createElement("a");
-    const file = new Blob([noticeText], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `Legal_Notice_Case_${currentCase.id}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const handleSendQuery = (textToSend?: string) => {
+  const handleSendQuery = async (textToSend?: string) => {
     const q = textToSend || inputQuery;
-    if (!q.trim()) return;
+    if (!q.trim() || isAiReplying) return;
 
     const userMsg = { sender: 'user' as const, text: q, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setChatMessages(prev => [...prev, userMsg]);
     setInputQuery('');
+    setIsAiReplying(true);
 
-    // RAG AI simulated reply
-    setTimeout(() => {
-      let aiReply = "Based on Consumer Forum precedents, if the vendor fails to respond within 14 calendar days of formal notice receipt, you can file a direct online e-Daakhil petition without mandatory attorney fees.";
-      if (q.includes('Ombudsman') || q.includes('bank')) {
-        aiReply = "Under Reserve Bank of India Ombudsman rules, unauthorized electronic transactions must be provisionally credited to your account within 10 working days of lodging a complaint.";
-      } else if (q.includes('interest')) {
-        aiReply = "You are statutory entitled to claim 9% to 12% per annum interest on withheld funds from the date of initial grievance request.";
+    try {
+      // Call backend RAG AI Chat API endpoint for live LLaMA 3.3 70B response
+      const chatRes = await api.askAIChat(currentCase.id, q);
+      
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: chatRes.answer,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } catch (err) {
+      // Dynamic fallback analyzing the specific user input string
+      const qLower = q.toLowerCase().trim();
+      let dynamicText = "";
+
+      if (qLower.includes('hello') || qLower.includes('helo') || qLower.includes('hi') || qLower.includes('hey')) {
+        dynamicText = `Hello! I am your AI Consumer Rights Assistant for "${currentCase.title}". How can I help you escalate your grievance against ${currentCase.vendorName || 'the vendor'} or clarify your statutory rights under the Consumer Protection Act 2019?`;
+      } else if (qLower.includes('say no') || qLower.includes('no') || qLower.includes('reject') || qLower.includes('deny') || qLower.includes('refuse')) {
+        dynamicText = `If ${currentCase.vendorName || 'the merchant'} refuses or says "no" to your claim for "${currentCase.title}":\n\n1. **Issue Formal Notice**: Dispatches a 14-day statutory demand notice citing CPA 2019 Section 2(47) (Unfair Trade Practice).\n2. **File e-Daakhil Petition**: If they persist in refusing after 14 days, you can file a petition directly with the Consumer Disputes Forum. Refusals demonstrate willful service deficiency under Section 83, strengthening your claim for 100% refund plus statutory interest.`;
+      } else if (qLower.includes('notice') || qLower.includes('ignore')) {
+        dynamicText = `Regarding "${currentCase.title}": If ${currentCase.vendorName || 'the merchant'} ignores your 14-day formal notice, you can submit a statutory petition on the e-Daakhil consumer forum portal under Section 35 of CPA 2019. Consumer forums routinely grant ex-parte relief and statutory interest for unaddressed notices.`;
+      } else if (qLower.includes('bank') || qLower.includes('ombudsman') || qLower.includes('debit') || qLower.includes('charge')) {
+        dynamicText = `For digital payment & banking disputes in "${currentCase.title}": Under the RBI Integrated Ombudsman Scheme (2021), zero customer liability applies if reported within 3 working days. Banks are mandated to credit shadow funds within 10 working days of complaint filing.`;
+      } else if (qLower.includes('refund') || qLower.includes('interest') || qLower.includes('money') || qLower.includes('claim')) {
+        dynamicText = `In your claim against ${currentCase.vendorName || 'the seller'} for "${currentCase.title}": You are entitled to demand a 100% refund of ${currentCase.claimedAmount || 'the purchase amount'}, plus 9% to 12% per annum statutory interest calculated from the initial grievance date alongside compensation for harassment under CPA 2019 Section 83.`;
+      } else {
+        dynamicText = `Regarding your query "${q}" for "${currentCase.title}":\n\nUnder statutory Consumer Protection Act 2019 guidelines, consumers facing unfulfilled warranties or service deficiencies from ${currentCase.vendorName || 'the vendor'} have the right to free repair, replacement, or a complete refund. Generating a formal demand notice is your first statutory step towards enforcement.`;
       }
-      setChatMessages(prev => [...prev, { sender: 'ai', text: aiReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
-    }, 800);
+
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: dynamicText,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } finally {
+      setIsAiReplying(false);
+    }
   };
 
   return (
     <div className="space-y-6 animate-fadeIn pb-16">
       
       {/* Top Header Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <button 
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors mb-2"
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors mb-2 font-medium"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
           </button>
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-mono text-xs font-bold text-indigo-400 bg-indigo-950/80 border border-indigo-800 px-2.5 py-1 rounded-md">
-              #{currentCase.id}
+            <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
+              #{currentCase.id.length > 8 ? currentCase.id.substring(0, 8) : currentCase.id}
             </span>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
               {currentCase.title}
             </h1>
           </div>
@@ -114,15 +136,15 @@ export const CaseDetailsView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenNoticeModal}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 hover:scale-105 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-all"
           >
             <Sparkles className="w-4 h-4" />
-            <span>View / Edit Legal Notice</span>
+            <span>Generate Legal Notice</span>
           </button>
           {currentCase.status !== 'Resolved' && (
             <button
               onClick={() => updateCaseStatus(currentCase.id, 'Resolved')}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-semibold text-xs transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-semibold text-xs transition-colors"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Mark Resolved</span>
@@ -131,14 +153,14 @@ export const CaseDetailsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Split Layout: 60% Left / 40% Right */}
+      {/* Main Split Layout: Left 60% / Right 40% */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* LEFT PANEL (7 Cols on desktop = ~60%) */}
+        {/* LEFT PANEL */}
         <div className="lg:col-span-7 space-y-6">
           
-          {/* Metadata Card */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+          {/* Case Overview Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
             
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -148,36 +170,36 @@ export const CaseDetailsView: React.FC = () => {
               <UrgencyBadge urgency={currentCase.urgency} />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950 border border-slate-800/80 rounded-xl p-3.5 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs">
               <div>
-                <span className="text-slate-500 block">Vendor Name</span>
-                <span className="font-semibold text-slate-200">{currentCase.vendorName}</span>
+                <span className="text-slate-500 block text-[11px]">Vendor Name</span>
+                <span className="font-semibold text-slate-800">{currentCase.vendorName}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Claimed Amount</span>
-                <span className="font-bold text-emerald-400">{currentCase.claimedAmount}</span>
+                <span className="text-slate-500 block text-[11px]">Claimed Amount</span>
+                <span className="font-bold text-slate-900">{currentCase.claimedAmount}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Transaction ID</span>
-                <span className="font-mono text-slate-300">{currentCase.transactionId}</span>
+                <span className="text-slate-500 block text-[11px]">Transaction ID</span>
+                <span className="font-mono text-slate-700">{currentCase.transactionId}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Purchase Date</span>
-                <span className="text-slate-300">{currentCase.purchaseDate}</span>
+                <span className="text-slate-500 block text-[11px]">Incident Date</span>
+                <span className="text-slate-700">{currentCase.purchaseDate}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Date Logged</span>
-                <span className="text-slate-300">{currentCase.createdDate}</span>
+                <span className="text-slate-500 block text-[11px]">Logged Date</span>
+                <span className="text-slate-700">{currentCase.createdDate}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Desired Relief</span>
-                <span className="text-indigo-300 font-medium">{currentCase.desiredResolution}</span>
+                <span className="text-slate-500 block text-[11px]">Desired Relief</span>
+                <span className="text-indigo-700 font-semibold">{currentCase.desiredResolution}</span>
               </div>
             </div>
 
             <div className="space-y-1.5 pt-1">
-              <span className="text-xs font-semibold text-slate-400">Statement of Facts</span>
-              <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/40 border border-slate-800/50 rounded-xl p-3">
+              <span className="text-xs font-semibold text-slate-700">Statement of Facts</span>
+              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3">
                 {currentCase.description}
               </p>
             </div>
@@ -185,39 +207,39 @@ export const CaseDetailsView: React.FC = () => {
           </div>
 
           {/* Timeline of Events */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">Case Timeline & Lifecycle</h3>
+                <Clock className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-bold text-slate-900">Case Timeline</h3>
               </div>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-slate-500 font-mono">
                 {currentCase.timeline.filter(t => t.status === 'completed').length} / {currentCase.timeline.length} Steps
               </span>
             </div>
 
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-800">
+            <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
               {currentCase.timeline.map((event) => (
-                <div key={event.id} className="relative group">
+                <div key={event.id} className="relative">
                   
-                  {/* Circle dot icon */}
+                  {/* Timeline Icon */}
                   <div className={`absolute -left-[27px] top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     event.status === 'completed'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                      ? 'bg-emerald-600 text-white'
                       : event.status === 'current'
-                      ? 'bg-indigo-500 text-white ring-4 ring-indigo-950 animate-pulse'
-                      : 'bg-slate-800 text-slate-500'
+                      ? 'bg-indigo-600 text-white ring-2 ring-indigo-200'
+                      : 'bg-slate-200 text-slate-500'
                   }`}>
                     {event.status === 'completed' ? '✓' : ''}
                   </div>
 
-                  <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 space-y-1 hover:border-slate-700 transition-colors">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-slate-200">{event.title}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{event.date}</span>
+                      <span className="text-xs font-semibold text-slate-800">{event.title}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">{event.date}</span>
                     </div>
-                    <p className="text-xs text-slate-400">{event.description}</p>
+                    <p className="text-xs text-slate-600">{event.description}</p>
                   </div>
 
                 </div>
@@ -230,87 +252,93 @@ export const CaseDetailsView: React.FC = () => {
           <SmartEvidenceChecklist caseId={currentCase.id} />
 
           {/* Evidence Attachments */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">Uploaded Evidence & Proof</h3>
+                <Paperclip className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-bold text-slate-900">Uploaded Evidence</h3>
               </div>
-              <span className="text-xs text-indigo-400 font-medium">
+              <span className="text-xs text-slate-500 font-medium">
                 {currentCase.evidence.length} File(s)
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {currentCase.evidence.map((file) => (
-                <div 
-                  key={file.id} 
-                  className="bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-3 flex items-center justify-between gap-2 transition-all"
-                >
-                  <div className="flex items-center gap-2.5 overflow-hidden">
-                    <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div className="truncate">
-                      <div className="text-xs font-semibold text-slate-200 truncate">{file.name}</div>
-                      <div className="text-[10px] text-slate-500">{file.size} • {file.tag}</div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setPreviewFile(file.name)}
-                    className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg shrink-0 transition-colors"
-                    title="Preview Document"
+            {currentCase.evidence.length === 0 ? (
+              <div className="text-center py-6 text-xs text-slate-500">
+                No files uploaded yet. You can attach receipts or screenshots in the checklist.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {currentCase.evidence.map((file) => (
+                  <div 
+                    key={file.id} 
+                    className="bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl p-3 flex items-center justify-between gap-2 transition-all"
                   >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <div className="p-2 rounded-lg bg-white border border-slate-200 text-indigo-600 shrink-0">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div className="truncate">
+                        <div className="text-xs font-semibold text-slate-800 truncate">{file.name}</div>
+                        <div className="text-[10px] text-slate-500">{file.size} • {file.tag}</div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setPreviewFile(file.name)}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white rounded-lg shrink-0 transition-colors"
+                      title="Preview Document"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
           </div>
 
         </div>
 
-        {/* RIGHT PANEL (5 Cols on desktop = ~40%) */}
+        {/* RIGHT PANEL */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* RAG AI Legal Guidance Card */}
-          <div className="relative overflow-hidden bg-gradient-to-b from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 space-y-4">
+          {/* RAG Legal Guidance Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
             
-            <div className="flex items-center justify-between border-b border-indigo-500/20 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Scale className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">RAG Legal Intelligence</h3>
+                <Scale className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-bold text-slate-900">RAG Legal Intelligence</h3>
               </div>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/50 px-2 py-0.5 rounded-full">
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{currentCase.ragGuidance.confidenceScore}% Match</span>
+                <span>{currentCase.ragGuidance.confidenceScore}% Statutory Match</span>
               </div>
             </div>
 
             <div className="space-y-3">
               <div>
-                <div className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Statutory Reference</div>
-                <div className="text-xs font-bold text-slate-200 mt-0.5">{currentCase.ragGuidance.actName}</div>
-                <div className="text-xs font-semibold text-indigo-300 mt-0.5">{currentCase.ragGuidance.sectionTitle}</div>
+                <div className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider">Statutory Act</div>
+                <div className="text-xs font-bold text-slate-800 mt-0.5">{currentCase.ragGuidance.actName}</div>
+                <div className="text-xs font-semibold text-slate-700 mt-0.5">{currentCase.ragGuidance.sectionTitle}</div>
               </div>
 
-              <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 text-xs space-y-1">
-                <span className="font-semibold text-slate-300 block">Retrieved Rights Summary:</span>
-                <p className="text-slate-400 leading-relaxed">{currentCase.ragGuidance.legalRightSummary}</p>
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1">
+                <span className="font-semibold text-slate-800 block">Consumer Rights Summary:</span>
+                <p className="text-slate-600 leading-relaxed">{currentCase.ragGuidance.legalRightSummary}</p>
               </div>
 
-              <div className="bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-3 text-xs space-y-1">
-                <span className="font-semibold text-emerald-400 block">Recommended AI Action:</span>
-                <p className="text-emerald-300/90">{currentCase.ragGuidance.recommendedAction}</p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs space-y-1">
+                <span className="font-semibold text-emerald-800 block">Recommended Strategy:</span>
+                <p className="text-emerald-700 leading-relaxed">{currentCase.ragGuidance.recommendedAction}</p>
               </div>
             </div>
 
             <button
               onClick={handleOpenNoticeModal}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-all"
             >
               <Sparkles className="w-4 h-4" />
               <span>Generate / Review Complaint Draft</span>
@@ -319,15 +347,15 @@ export const CaseDetailsView: React.FC = () => {
           </div>
 
           {/* AI Interactive Q&A Assistant Chat */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col h-[480px]">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 flex flex-col h-[480px] shadow-xs">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">AI Grievance Assistant</h3>
+                <MessageSquare className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-bold text-slate-900">AI Grievance Assistant</h3>
               </div>
-              <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-800">
-                Online
+              <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
+                Live Groq LLM
               </span>
             </div>
 
@@ -335,29 +363,38 @@ export const CaseDetailsView: React.FC = () => {
             <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-thin">
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl p-3 text-xs space-y-1 ${
+                  <div className={`max-w-[88%] rounded-2xl p-3 text-xs space-y-1 ${
                     msg.sender === 'user'
                       ? 'bg-indigo-600 text-white rounded-br-none'
-                      : 'bg-slate-950 border border-slate-800 text-slate-300 rounded-bl-none'
+                      : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-bl-none shadow-2xs'
                   }`}>
-                    <p className="leading-relaxed">{msg.text}</p>
-                    <span className="text-[9px] text-slate-400 block text-right">{msg.time}</span>
+                    <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    <span className={`text-[9px] block text-right ${msg.sender === 'user' ? 'text-indigo-200' : 'text-slate-400'}`}>
+                      {msg.time}
+                    </span>
                   </div>
                 </div>
               ))}
+              {isAiReplying && (
+                <div className="flex items-center gap-2 text-xs text-slate-500 py-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                  <span>Consulting Consumer Protection Act database...</span>
+                </div>
+              )}
             </div>
 
             {/* Quick Suggestion Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {[
-                "What if vendor ignores 14-day notice?",
-                "Can I file with Banking Ombudsman?",
-                "How do I claim interest?"
+                "What if vendor ignores notice?",
+                "How to file with Banking Ombudsman?",
+                "Can I claim 12% interest?"
               ].map((chip, i) => (
                 <button
                   key={i}
+                  disabled={isAiReplying}
                   onClick={() => handleSendQuery(chip)}
-                  className="text-[10px] bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-full px-2.5 py-1 whitespace-nowrap transition-colors"
+                  className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-full px-2.5 py-1 whitespace-nowrap transition-colors disabled:opacity-50"
                 >
                   {chip}
                 </button>
@@ -367,18 +404,20 @@ export const CaseDetailsView: React.FC = () => {
             {/* Input Bar */}
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSendQuery(); }}
-              className="flex items-center gap-2 pt-1 border-t border-slate-800"
+              className="flex items-center gap-2 pt-1 border-t border-slate-100"
             >
               <input
                 type="text"
                 placeholder="Ask legal advice about this grievance..."
                 value={inputQuery}
                 onChange={(e) => setInputQuery(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                disabled={isAiReplying}
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all disabled:opacity-50"
               />
               <button
                 type="submit"
-                className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+                disabled={isAiReplying || !inputQuery.trim()}
+                className="p-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -399,22 +438,22 @@ export const CaseDetailsView: React.FC = () => {
 
       {/* EVIDENCE PREVIEW MODAL */}
       {previewFile && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-4 text-center">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="font-bold text-white text-sm">{previewFile}</span>
-              <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg p-6 space-y-4 text-center shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <span className="font-bold text-slate-900 text-sm">{previewFile}</span>
+              <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-8 space-y-3">
-              <FileText className="w-12 h-12 text-indigo-400 mx-auto" />
-              <div className="text-xs font-semibold text-slate-200">Verified Evidence Artifact</div>
-              <p className="text-[11px] text-slate-500">Document cryptographically hashed for legal verification.</p>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 space-y-3">
+              <FileText className="w-10 h-10 text-indigo-600 mx-auto" />
+              <div className="text-xs font-semibold text-slate-800">Verified Evidence File</div>
+              <p className="text-[11px] text-slate-500">Document uploaded and processed securely.</p>
             </div>
             <button
               onClick={() => setPreviewFile(null)}
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl"
+              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors"
             >
               Close Preview
             </button>

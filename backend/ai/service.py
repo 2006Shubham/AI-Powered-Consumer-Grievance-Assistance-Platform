@@ -11,6 +11,7 @@ from backend.ai.prompts import (
     build_follow_up_user_prompt
 )
 from backend.shared.config import get_settings
+from backend.shared.database import safe_object_id
 
 class AIService:
     def __init__(self, db: AsyncIOMotorDatabase):
@@ -26,10 +27,11 @@ class AIService:
         
         settings = get_settings()
         now = datetime.now(timezone.utc)
+        safe_c_id = safe_object_id(case_id)
         
         # Store in ai_analyses collection
         await self.db.ai_analyses.insert_one({
-            "case_id": ObjectId(case_id),
+            "case_id": safe_c_id,
             "analysis_type": "case_understanding",
             "provider": "groq",
             "model": settings.groq_model,
@@ -40,7 +42,7 @@ class AIService:
         
         # Update cases collection fields
         await self.db.cases.update_one(
-            {"_id": ObjectId(case_id)},
+            {"_id": safe_c_id},
             {
                 "$set": {
                     "category": analysis.category.lower(),
@@ -53,7 +55,7 @@ class AIService:
 
         # Record timeline event
         await self.db.timeline_events.insert_one({
-            "case_id": ObjectId(case_id),
+            "case_id": safe_c_id,
             "event_type": "analysis_completed",
             "description": f"AI Problem Analysis completed. Category: {analysis.category}.",
             "created_at": now
@@ -69,9 +71,10 @@ class AIService:
         
         settings = get_settings()
         now = datetime.now(timezone.utc)
+        safe_c_id = safe_object_id(case_id)
         
         await self.db.ai_analyses.insert_one({
-            "case_id": ObjectId(case_id),
+            "case_id": safe_c_id,
             "analysis_type": "follow_up_questions",
             "provider": "groq",
             "model": settings.groq_model,
@@ -84,10 +87,11 @@ class AIService:
 
     async def process_user_answers(self, case_id: str, user_answers: UserAnswersInput) -> Dict[str, Any]:
         now = datetime.now(timezone.utc)
+        safe_c_id = safe_object_id(case_id)
         
         # Save answers to case document
         await self.db.cases.update_one(
-            {"_id": ObjectId(case_id)},
+            {"_id": safe_c_id},
             {
                 "$set": {
                     "user_answers": user_answers.answers,
@@ -97,7 +101,7 @@ class AIService:
         )
 
         await self.db.timeline_events.insert_one({
-            "case_id": ObjectId(case_id),
+            "case_id": safe_c_id,
             "event_type": "user_answers_submitted",
             "description": "User provided answers to AI follow-up questions.",
             "created_at": now

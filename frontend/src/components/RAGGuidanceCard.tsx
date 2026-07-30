@@ -38,20 +38,20 @@ export const RAGGuidanceCard: React.FC<RAGGuidanceCardProps> = ({ caseId }) => {
   };
 
   return (
-    <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-5 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
-            <Scale className="w-6 h-6" />
+          <div className="p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-600">
+            <Scale className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>RAG AI Legal Intelligence & Rights</span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-semibold uppercase tracking-wider border border-amber-500/20">
-                Grounded Guidance
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span>RAG Legal Intelligence</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-semibold border border-amber-200">
+                Grounded Statutory Law
               </span>
             </h3>
-            <p className="text-xs text-slate-400">Statutory provisions retrieved from Consumer Protection Acts & TRAI/RBI Frameworks</p>
+            <p className="text-xs text-slate-500">Consumer Protection Act 2019 & TRAI/RBI regulatory frameworks</p>
           </div>
         </div>
 
@@ -59,53 +59,53 @@ export const RAGGuidanceCard: React.FC<RAGGuidanceCardProps> = ({ caseId }) => {
           <button
             type="button"
             onClick={fetchGuidance}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-indigo-600 hover:opacity-95 text-white text-xs font-bold shadow-lg flex items-center gap-2 transition-all shrink-0"
+            className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition-all shrink-0"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Generate Legal Guidance</span>
+            <span>Generate Guidance</span>
           </button>
         )}
       </div>
 
       {isLoading && (
-        <div className="py-8 text-center text-xs text-amber-300 animate-pulse space-y-2">
-          <Scale className="w-7 h-7 mx-auto animate-bounce" />
-          <p>Querying vector store & retrieving applicable consumer protection statutes...</p>
+        <div className="py-6 text-center text-xs text-indigo-900 animate-pulse space-y-2">
+          <Scale className="w-6 h-6 mx-auto text-indigo-600 animate-bounce" />
+          <p>Querying vector database & retrieving applicable consumer protection statutes...</p>
         </div>
       )}
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {guidance && (
-        <div className="space-y-5 pt-2">
+        <div className="space-y-4 pt-1">
           {/* Summary Analysis */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-            <h4 className="font-bold text-amber-400 mb-1.5 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Legal Merit Analysis</span>
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 leading-relaxed">
+            <h4 className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              <span>Statutory Legal Analysis</span>
             </h4>
             {guidance.summary_analysis}
           </div>
 
           {/* Applicable Statutory Provisions */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Retrieved Statutory References</span>
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4 text-indigo-600" />
+              <span>Retrieved Consumer Protection Statutes</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {guidance.applicable_laws.map((law, idx) => (
-                <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1">
+                <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-white">{law.title}</span>
+                    <span className="font-bold text-slate-900">{law.title}</span>
                   </div>
-                  <span className="inline-block text-[10px] text-indigo-400 font-mono">{law.source}</span>
-                  <p className="text-[11px] text-slate-400">{law.summary}</p>
+                  <span className="inline-block text-[10px] text-indigo-700 font-mono font-semibold">{law.source}</span>
+                  <p className="text-[11px] text-slate-600">{law.summary}</p>
                 </div>
               ))}
             </div>
@@ -113,24 +113,24 @@ export const RAGGuidanceCard: React.FC<RAGGuidanceCardProps> = ({ caseId }) => {
 
           {/* Recommended Remedies & Next Steps */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-              <h4 className="text-xs font-bold text-emerald-400">Statutory Remedies Available</h4>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h4 className="text-xs font-bold text-emerald-800">Statutory Remedies</h4>
               <ul className="space-y-1.5">
                 {guidance.recommended_remedies.map((remedy, idx) => (
-                  <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
-                    <span className="text-emerald-400 shrink-0">•</span>
+                  <li key={idx} className="text-xs text-slate-700 flex items-start gap-2">
+                    <span className="text-emerald-600 shrink-0 font-bold">•</span>
                     <span>{remedy}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-              <h4 className="text-xs font-bold text-sky-400">Recommended Action Steps</h4>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <h4 className="text-xs font-bold text-indigo-800">Action Plan</h4>
               <ul className="space-y-1.5">
                 {guidance.next_steps.map((step, idx) => (
-                  <li key={idx} className="text-xs text-slate-300 flex items-start gap-2">
-                    <ArrowRight className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                  <li key={idx} className="text-xs text-slate-700 flex items-start gap-2">
+                    <ArrowRight className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
                     <span>{step}</span>
                   </li>
                 ))}

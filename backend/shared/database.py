@@ -1,6 +1,12 @@
+from typing import Optional, Any
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from bson import ObjectId
 from backend.shared.config import get_settings
-from typing import Optional
+
+def safe_object_id(val: Any) -> Any:
+    if isinstance(val, str) and ObjectId.is_valid(val):
+        return ObjectId(val)
+    return val
 
 class DatabaseManager:
     client: Optional[AsyncIOMotorClient] = None

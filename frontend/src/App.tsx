@@ -5,7 +5,8 @@ import { Header } from './components/layout/Header';
 import { Dashboard } from './pages/Dashboard';
 import { NewCaseWizard } from './pages/NewCaseWizard';
 import { CaseDetailsView } from './pages/CaseDetailsView';
-import { AuthView } from './components/AuthView';
+import { LandingPage } from './pages/LandingPage';
+import { LoadingScreen } from './components/common/LoadingScreen';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useCases();
@@ -23,30 +24,26 @@ const AuthenticatedApp: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
-        Loading Consumer Grievance Platform...
-      </div>
-    );
+    return <LoadingScreen message="Initializing RAG Consumer Protection Engine..." />;
   }
 
   if (!isAuthenticated) {
-    return <AuthView />;
+    return <LandingPage />;
   }
 
   return (
     <CaseProvider>
-      <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col">
+      <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-600 selection:text-white flex flex-col">
         <Header />
         <div className="flex-1">
           <MainContent />
         </div>
-        <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+        <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <span>© 2026 GrievanceAI Platform • Consumer Protection Act Redressal Systems</span>
             <div className="flex items-center gap-4">
-              <span className="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
-              <span className="hover:text-slate-300 cursor-pointer">Terms of Service</span>
+              <span className="hover:text-slate-700 cursor-pointer transition-colors">Privacy Policy</span>
+              <span className="hover:text-slate-700 cursor-pointer transition-colors">Terms of Service</span>
             </div>
           </div>
         </footer>

@@ -6,15 +6,15 @@ interface CategoryBadgeProps {
 
 export const CategoryBadge: React.FC<CategoryBadgeProps> = ({ category }) => {
   const styles: Record<CaseCategory, string> = {
-    Electronics: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-    'E-commerce': 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-    Banking: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-    Utilities: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-    Telecommunications: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+    Electronics: 'bg-slate-100 text-slate-700 border-slate-200',
+    'E-commerce': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    Banking: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    Utilities: 'bg-amber-50 text-amber-700 border-amber-200',
+    Telecommunications: 'bg-cyan-50 text-cyan-700 border-cyan-200',
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles[category] || 'bg-slate-700 text-slate-300'}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${styles[category] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
       {category}
     </span>
   );
@@ -26,12 +26,12 @@ interface StatusBadgeProps {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const styles: Record<CaseStatus, { color: string; dot: string }> = {
-    Draft: { color: 'bg-slate-500/10 text-slate-400 border-slate-500/30', dot: 'bg-slate-400' },
-    'AI Analyzing': { color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30 animate-pulse', dot: 'bg-indigo-400 animate-ping' },
-    'Pending Info': { color: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
-    'In Progress': { color: 'bg-blue-500/10 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
-    Escalated: { color: 'bg-rose-500/10 text-rose-400 border-rose-500/30', dot: 'bg-rose-500' },
-    Resolved: { color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+    Draft: { color: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' },
+    'AI Analyzing': { color: 'bg-indigo-50 text-indigo-700 border-indigo-200', dot: 'bg-indigo-600 animate-pulse' },
+    'Pending Info': { color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
+    'In Progress': { color: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-600' },
+    Escalated: { color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-600' },
+    Resolved: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-600' },
   };
 
   const style = styles[status] || styles['Draft'];
@@ -50,14 +50,14 @@ interface UrgencyBadgeProps {
 
 export const UrgencyBadge: React.FC<UrgencyBadgeProps> = ({ urgency }) => {
   const styles: Record<CaseUrgency, string> = {
-    Low: 'bg-slate-800 text-slate-300 border-slate-700',
-    Medium: 'bg-blue-950 text-blue-300 border-blue-800',
-    High: 'bg-amber-950 text-amber-300 border-amber-800',
-    Critical: 'bg-rose-950 text-rose-300 border-rose-800 animate-pulse',
+    Low: 'bg-slate-100 text-slate-600 border-slate-200',
+    Medium: 'bg-blue-50 text-blue-700 border-blue-200',
+    High: 'bg-amber-50 text-amber-700 border-amber-200',
+    Critical: 'bg-rose-50 text-rose-700 border-rose-200 font-bold',
   };
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold border uppercase tracking-wider ${styles[urgency]}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border tracking-wide uppercase ${styles[urgency]}`}>
       {urgency} Priority
     </span>
   );
