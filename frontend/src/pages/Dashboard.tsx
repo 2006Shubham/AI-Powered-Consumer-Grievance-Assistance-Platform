@@ -77,6 +77,45 @@ export const Dashboard: React.FC = () => {
             <span>Create New Case</span>
           </button>
         </div>
+
+        {/* Featured Demo Scenarios Quick Launcher for Presentations */}
+        <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div 
+            onClick={() => handleCaseClick('1042')}
+            className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/80 hover:bg-indigo-100/80 transition-all cursor-pointer flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                TV
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                  Demo Case 1: Defective OLED Smart TV
+                </span>
+                <p className="text-[11px] text-slate-500">CPA 2019 Warranty & Refusal Dispute ($1,299)</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+          </div>
+
+          <div 
+            onClick={() => handleCaseClick('1039')}
+            className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all cursor-pointer flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-slate-800 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                $
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                  Demo Case 2: Unauthorized Subscription Debit
+                </span>
+                <p className="text-[11px] text-slate-500">RBI Ombudsman & E-Commerce Rules ($240)</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
       </div>
 
       {/* Metrics Summary Grid */}

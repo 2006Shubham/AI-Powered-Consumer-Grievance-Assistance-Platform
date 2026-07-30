@@ -32,7 +32,7 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
 
     // Check pre-populated case cards
     expect(screen.getByText('#1042')).toBeInTheDocument();
-    expect(screen.getByText(/Defective OLED Smart TV/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Defective OLED Smart TV/i)[0]).toBeInTheDocument();
   });
 
   it('filters cases by search query and category pills', async () => {
@@ -41,7 +41,7 @@ describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
     const searchInput = screen.getByPlaceholderText(/Search by case #/i);
     fireEvent.change(searchInput, { target: { value: 'OLED' } });
 
-    expect(screen.getByText(/Defective OLED Smart TV/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Defective OLED Smart TV/i)[0]).toBeInTheDocument();
     expect(screen.queryByText(/Unauthorized Recurring Subscription/i)).not.toBeInTheDocument();
 
     // Clear search

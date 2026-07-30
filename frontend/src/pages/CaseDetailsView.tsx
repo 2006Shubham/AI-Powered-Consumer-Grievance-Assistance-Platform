@@ -206,6 +206,80 @@ export const CaseDetailsView: React.FC = () => {
 
           </div>
 
+          {/* AI Success Odds & Claim Recovery Estimator Card */}
+          <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-lg space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800/80 pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-300">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm text-white tracking-tight">AI Claim Assessment & Win Odds</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-semibold">
+                      High Viability
+                    </span>
+                  </div>
+                  <p className="text-xs text-indigo-200/80">Evaluated against CPA 2019 precedent databases</p>
+                </div>
+              </div>
+
+              <div className="text-right sm:text-right">
+                <span className="text-2xl font-black text-emerald-400 tracking-tight">94%</span>
+                <span className="text-[11px] text-indigo-200 block font-medium">Estimated Success Likelihood</span>
+              </div>
+            </div>
+
+            {/* Recovery Amount Breakdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-indigo-900/50 border border-indigo-700/50 rounded-xl p-3 text-xs">
+              <div>
+                <span className="text-indigo-300/80 text-[11px] block">Principal Claim</span>
+                <span className="font-bold text-white text-sm">{currentCase.claimedAmount}</span>
+              </div>
+              <div>
+                <span className="text-indigo-300/80 text-[11px] block">Statutory Interest (9% p.a.)</span>
+                <span className="font-bold text-emerald-400 text-sm">+$116.91</span>
+              </div>
+              <div>
+                <span className="text-indigo-300/80 text-[11px] block">Total Estimated Recovery</span>
+                <span className="font-extrabold text-indigo-100 text-sm">$1,415.91</span>
+              </div>
+            </div>
+
+            {/* 3-Step Escalation Pathway */}
+            <div className="space-y-2 pt-1">
+              <span className="text-xs font-semibold text-indigo-200">Statutory Escalation Pathway</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="p-2.5 rounded-xl bg-indigo-800/40 border border-indigo-500/30 flex flex-col justify-between space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-emerald-400">Step 1: Legal Notice</span>
+                    <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded text-[9px]">Active</span>
+                  </div>
+                  <p className="text-[10px] text-indigo-200/90 leading-tight">14-Day Demand Notice served to vendor legal team.</p>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-800/40 flex flex-col justify-between space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-indigo-300">Step 2: NCH Helpline</span>
+                    <span className="text-indigo-400 text-[9px]">Next Step</span>
+                  </div>
+                  <p className="text-[10px] text-indigo-300/70 leading-tight">National Consumer Helpline portal registration.</p>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-800/40 flex flex-col justify-between space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-indigo-300">Step 3: e-Daakhil Court</span>
+                    <span className="text-indigo-400 text-[9px]">Statutory</span>
+                  </div>
+                  <p className="text-[10px] text-indigo-300/70 leading-tight">District Consumer Commission online petition filing.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
           {/* Timeline of Events */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-xs">
             
