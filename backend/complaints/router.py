@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from typing import Optional
 
-from backend.auth.security import get_current_user
+from backend.auth.security import get_current_user, get_optional_current_user
 from backend.users.models import UserResponse
 from backend.complaints.models import (
     ComplaintCreateInput,
@@ -22,7 +22,7 @@ service = ComplaintService()
 async def generate_complaint(
     case_id: str,
     input_data: Optional[ComplaintCreateInput] = None,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     try:
         user_id = str(current_user.id)
@@ -38,7 +38,7 @@ async def generate_complaint(
 @router.get("", response_model=ComplaintResponse)
 async def get_complaint(
     case_id: str,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     user_id = str(current_user.id)
     doc = await service.get_complaint(case_id, user_id)
@@ -50,7 +50,7 @@ async def get_complaint(
 async def update_complaint(
     case_id: str,
     update_input: ComplaintUpdateInput,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     try:
         user_id = str(current_user.id)
@@ -72,7 +72,7 @@ async def update_complaint(
 async def export_complaint(
     case_id: str,
     format: ComplaintExportFormat = ComplaintExportFormat.TXT,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     try:
         user_id = str(current_user.id)

@@ -5,7 +5,7 @@ import { Clock, CheckCircle, FileUp, Sparkles, AlertCircle, RefreshCw } from 'lu
 interface TimelineEvent {
   id: string;
   case_id: string;
-  event_type: str;
+  event_type: string;
   description: string;
   created_at: string;
 }
@@ -39,59 +39,65 @@ export const CaseTimelineView: React.FC<CaseTimelineViewProps> = ({ caseId }) =>
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
       case 'case_created':
-        return <CheckCircle className="w-4 h-4 text-emerald-400" />;
+        return <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />;
       case 'evidence_uploaded':
-        return <FileUp className="w-4 h-4 text-indigo-400" />;
+        return <FileUp className="w-3.5 h-3.5 text-indigo-600" />;
       case 'analysis_completed':
-        return <Sparkles className="w-4 h-4 text-amber-400" />;
+        return <Sparkles className="w-3.5 h-3.5 text-indigo-600" />;
+      case 'complaint_generated':
+        return <CheckCircle className="w-3.5 h-3.5 text-blue-600" />;
       default:
-        return <Clock className="w-4 h-4 text-sky-400" />;
+        return <Clock className="w-3.5 h-3.5 text-slate-500" />;
     }
   };
 
   return (
-    <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-      <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-white flex items-center gap-2">
-          <Clock className="w-5 h-5 text-indigo-400" />
-          <span>Case Timeline & Activity Audit</span>
+    <div className="bg-white border border-slate-200 rounded-lg p-5 space-y-4 shadow-2xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-slate-400" />
+          <span>Case Timeline</span>
         </h3>
         <button
           type="button"
           onClick={loadTimeline}
-          className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
           title="Refresh timeline"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+        <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {isLoading ? (
-        <div className="py-6 text-center text-xs text-slate-400 animate-pulse">
-          Loading case activity timeline...
+        <div className="py-4 text-center text-xs text-slate-400">
+          Loading timeline...
         </div>
       ) : events.length === 0 ? (
-        <p className="text-xs text-slate-500 text-center py-4">No events logged yet for this case.</p>
+        <p className="text-xs text-slate-400 text-center py-4">No events logged yet.</p>
       ) : (
-        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+        <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[1px] before:bg-slate-200">
           {events.map((evt) => (
-            <div key={evt.id} className="relative flex items-start gap-3">
-              <div className="absolute -left-6 top-0.5 p-1 rounded-full bg-slate-950 border border-slate-800 shadow-sm">
+            <div key={evt.id} className="relative flex items-start gap-2.5 text-xs">
+              <div className="absolute -left-5 top-0.5 p-0.5 rounded-full bg-white border border-slate-200 shadow-2xs">
                 {getEventIcon(evt.event_type)}
               </div>
-              <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-3.5 w-full space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-200 capitalize">{evt.event_type.replace('_', ' ')}</span>
-                  <span className="text-[10px] text-slate-500">{new Date(evt.created_at).toLocaleString()}</span>
+              <div className="flex-1 space-y-0.5">
+                <div className="flex items-center justify-between text-slate-700">
+                  <span className="font-medium text-slate-900 capitalize">
+                    {evt.event_type.replace(/_/g, ' ')}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    {evt.created_at ? new Date(evt.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
                 </div>
-                <p className="text-xs text-slate-400">{evt.description}</p>
+                <p className="text-slate-500 text-xs leading-relaxed">{evt.description}</p>
               </div>
             </div>
           ))}

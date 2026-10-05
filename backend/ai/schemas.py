@@ -8,6 +8,7 @@ class CaseAnalysis(BaseModel):
     desired_resolution: str = Field(default="unknown", description="One of: refund, replacement, repair, service_completion, charge_reversal, explanation, compensation, other, unknown")
     key_facts: List[str] = Field(default_factory=list, description="List of key facts extracted from the user description")
     missing_information: List[str] = Field(default_factory=list, description="List of missing information keys needed for resolution")
+    confidence: float = Field(default=0.85, description="Confidence score between 0.0 and 1.0")
 
 class FollowUpQuestions(BaseModel):
     questions: List[str] = Field(..., description="List of 3-5 short, targeted follow-up questions")

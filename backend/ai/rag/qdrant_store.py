@@ -1,8 +1,13 @@
 import logging
 import numpy as np
 from typing import List, Dict, Any, Tuple, Optional
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+try:
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import Distance, VectorParams, PointStruct
+    HAS_QDRANT = True
+except ImportError:
+    QdrantClient = None
+    HAS_QDRANT = False
 from backend.shared.config import get_settings
 
 logger = logging.getLogger("qdrant_store")
@@ -20,10 +25,10 @@ class QdrantVectorStore:
         self._init_qdrant()
 
     def _init_qdrant(self):
-        if self.qdrant_url and self.qdrant_api_key:
+        if HAS_QDRANT and self.qdrant_url and self.qdrant_api_key:
             try:
                 logger.info(f"Connecting to Qdrant Cloud cluster at {self.qdrant_url}...")
-                self.client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
+                self.client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key, timeout=3.0)
                 
                 # Check or create collection
                 collections = [c.name for c in self.client.get_collections().collections]

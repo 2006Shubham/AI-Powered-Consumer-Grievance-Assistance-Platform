@@ -13,6 +13,9 @@ from backend.ai.prompts import (
 from backend.shared.config import get_settings
 from backend.shared.database import safe_object_id
 
+import logging
+logger = logging.getLogger("ai_service")
+
 class AIService:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
@@ -20,10 +23,21 @@ class AIService:
 
     async def analyze_case_problem(self, case_id: str, title: str, description: str) -> CaseAnalysis:
         user_prompt = build_case_analysis_user_prompt(title, description)
-        json_data = await self.provider.generate_json(CASE_ANALYSIS_SYSTEM_PROMPT, user_prompt)
-        
-        # Validate through Pydantic
-        analysis = CaseAnalysis(**json_data)
+        try:
+            json_data = await self.provider.generate_json(CASE_ANALYSIS_SYSTEM_PROMPT, user_prompt)
+            # Validate through Pydantic
+            analysis = CaseAnalysis(**json_data)
+        except Exception as e:
+            logger.warning(f"Groq problem analysis failed ({e}). Returning safe baseline analysis.")
+            analysis = CaseAnalysis(
+                summary="AI analysis is temporarily unavailable. Your case has been saved safely.",
+                category="general_service",
+                issue_type="other",
+                desired_resolution="unknown",
+                key_facts=[],
+                missing_information=["purchase_date", "seller_name", "preferred_resolution"],
+                confidence=0.0
+            )
         
         settings = get_settings()
         now = datetime.now(timezone.utc)
@@ -41,16 +55,23 @@ class AIService:
         })
         
         # Update cases collection fields
+        update_fields: Dict[str, Any] = {
+            "updated_at": now
+        }
+        if analysis.category and analysis.category != "general_service":
+            update_fields["category"] = analysis.category.lower()
+        if analysis.issue_type and analysis.issue_type != "other":
+            update_fields["issue_type"] = analysis.issue_type.lower()
+        if analysis.desired_resolution and analysis.desired_resolution != "unknown":
+            update_fields["desired_resolution"] = analysis.desired_resolution.lower()
+        if analysis.summary and "unavailable" not in analysis.summary:
+            update_fields["summary"] = analysis.summary
+        if analysis.key_facts:
+            update_fields["key_facts"] = analysis.key_facts
+
         await self.db.cases.update_one(
             {"_id": safe_c_id},
-            {
-                "$set": {
-                    "category": analysis.category.lower(),
-                    "issue_type": analysis.issue_type.lower(),
-                    "desired_resolution": analysis.desired_resolution.lower(),
-                    "updated_at": now
-                }
-            }
+            {"$set": update_fields}
         )
 
         # Record timeline event
@@ -65,9 +86,22 @@ class AIService:
 
     async def generate_follow_up_questions(self, case_id: str, summary: str, missing_info: List[str]) -> FollowUpQuestions:
         user_prompt = build_follow_up_user_prompt(summary, missing_info)
-        json_data = await self.provider.generate_json(FOLLOW_UP_SYSTEM_PROMPT, user_prompt)
-        
-        follow_ups = FollowUpQuestions(**json_data)
+        try:
+            json_data = await self.provider.generate_json(FOLLOW_UP_SYSTEM_PROMPT, user_prompt)
+            follow_ups = FollowUpQuestions(**json_data)
+            # Ensure at least 1 question
+            if not follow_ups.questions:
+                raise ValueError("Empty questions list returned")
+        except Exception as e:
+            logger.warning(f"Groq follow-up question generation failed ({e}). Using standard follow-up questions.")
+            follow_ups = FollowUpQuestions(
+                questions=[
+                    "When did you purchase or receive the product or service?",
+                    "Do you have a purchase receipt, invoice, or transaction ID?",
+                    "Did the seller or company provide a written refusal?",
+                    "What specific resolution are you seeking (refund, replacement, or repair)?"
+                ]
+            )
         
         settings = get_settings()
         now = datetime.now(timezone.utc)

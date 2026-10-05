@@ -46,6 +46,11 @@ export interface GrievanceCase {
   description: string;
   timeline: TimelineEvent[];
   evidence: EvidenceFile[];
-  ragGuidance: RAGGuidance;
+  ragGuidance?: RAGGuidance;
   generatedNotice?: string;
+  user_answers?: Record<string, string>;
+  key_facts?: string[];
+  summary?: string;
+  missing_information?: string[];
+  follow_up_questions?: string[];
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, Scale, Sparkles, ArrowRight, CheckCircle2, 
-  FileText, Zap, Lock, BookOpen, AlertCircle, User, Mail, LogIn 
+  Zap, Lock, BookOpen, AlertCircle, User, Mail, LogIn 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 

@@ -106,7 +106,15 @@ class ApiService {
   }
 
   // Case Methods
-  async createCase(data: { title: string; description: string; category?: string; issue_type?: string; desired_resolution?: string }): Promise<Case> {
+  async createCase(data: {
+    title: string;
+    description: string;
+    category?: string;
+    issue_type?: string;
+    desired_resolution?: string;
+    vendor_name?: string;
+    claimed_amount?: string;
+  }): Promise<Case> {
     return this.request<Case>('/cases', {
       method: 'POST',
       body: JSON.stringify(data),

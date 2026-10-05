@@ -18,6 +18,8 @@ class CaseCreate(BaseModel):
     category: str = Field(default="general_service")
     issue_type: str = Field(default="other")
     desired_resolution: str = Field(default="unknown")
+    vendor_name: Optional[str] = None
+    claimed_amount: Optional[str] = None
 
 class CaseStatusUpdate(BaseModel):
     status: CaseStatusEnum
@@ -31,5 +33,9 @@ class CaseResponse(BaseModel):
     issue_type: str
     desired_resolution: str
     status: CaseStatusEnum
+    vendor_name: Optional[str] = None
+    claimed_amount: Optional[str] = None
+    summary: Optional[str] = None
+    user_answers: Optional[dict] = None
     created_at: datetime
     updated_at: datetime

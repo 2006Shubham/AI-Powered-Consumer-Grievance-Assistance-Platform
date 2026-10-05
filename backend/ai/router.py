@@ -6,64 +6,71 @@ from backend.users.models import UserResponse
 from backend.cases.repository import CaseRepository
 from backend.ai.service import AIService
 from backend.ai.rag.service import RAGService
+from backend.ai.rag.knowledge_base import LEGAL_KNOWLEDGE_BASE
+from backend.ai.providers.groq import GroqProvider
 from backend.ai.schemas import CaseAnalysis, FollowUpQuestions, UserAnswersInput
 
 router = APIRouter(prefix="/cases/{case_id}/ai", tags=["AI System"])
+
+import logging
+from backend.ai.prompts_base import CASE_ASSISTANT_SYSTEM_PROMPT
+
+logger = logging.getLogger("ai_router")
+
+def is_case_owner(case_user_id: str, current_user_id: str) -> bool:
+    if case_user_id == current_user_id:
+        return True
+    if current_user_id in ["demo-user-id", "6a63032400ff5e28a50d703c"] and case_user_id in ["demo-user-id", "6a63032400ff5e28a50d703c"]:
+        return True
+    return False
 
 async def verify_case_ownership(case_id: str, current_user: UserResponse, db) -> dict:
     repo = CaseRepository(db)
     doc = await repo.get_case_by_id(case_id)
     if not doc:
-        # Fallback for demo mock cases (like #1042)
-        return {
-            "_id": case_id,
-            "user_id": current_user.id,
-            "title": f"Defective OLED Smart TV Denied Warranty Service",
-            "description": "Purchased 55-inch OLED TV. Screen developed dead pixels and thermal distortion after 60 days. Tech support refused repair citing non-existent liquid damage.",
-            "category": "Electronics"
-        }
-    if str(doc["user_id"]) != current_user.id and str(doc.get("user_id")) != "demo":
-        # Allow demo access if authenticated
-        pass
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case not found"
+        )
+    if not is_case_owner(str(doc.get("user_id")), current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this case"
+        )
     return doc
 
 @router.post("/analyze", response_model=CaseAnalysis)
 async def analyze_case(
     case_id: str,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     db = get_database()
     case_doc = await verify_case_ownership(case_id, current_user, db)
     
     ai_service = AIService(db)
-    try:
-        analysis = await ai_service.analyze_case_problem(
-            case_id=case_id,
-            title=case_doc["title"],
-            description=case_doc["description"]
-        )
-        return analysis
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI Problem Analysis failed: {str(e)}"
-        )
+    analysis = await ai_service.analyze_case_problem(
+        case_id=case_id,
+        title=case_doc.get("title", ""),
+        description=case_doc.get("description", "")
+    )
+    return analysis
 
 @router.post("/follow-up", response_model=FollowUpQuestions)
 async def get_follow_up_questions(
     case_id: str,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     db = get_database()
     case_doc = await verify_case_ownership(case_id, current_user, db)
     
     # Check if existing analysis exists
+    c_id = ObjectId(case_id) if ObjectId.is_valid(case_id) else case_id
     latest_analysis = await db.ai_analyses.find_one(
-        {"case_id": ObjectId(case_id), "analysis_type": "case_understanding"},
+        {"case_id": c_id, "analysis_type": "case_understanding"},
         sort=[("created_at", -1)]
     )
     
-    summary = case_doc["description"][:200]
+    summary = case_doc.get("description", "")[:200]
     missing_info = ["purchase_date", "seller_name", "preferred_resolution"]
     
     if latest_analysis and "result" in latest_analysis:
@@ -72,20 +79,14 @@ async def get_follow_up_questions(
         missing_info = res.get("missing_information", missing_info)
         
     ai_service = AIService(db)
-    try:
-        follow_ups = await ai_service.generate_follow_up_questions(case_id, summary, missing_info)
-        return follow_ups
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Generating follow-up questions failed: {str(e)}"
-        )
+    follow_ups = await ai_service.generate_follow_up_questions(case_id, summary, missing_info)
+    return follow_ups
 
 @router.post("/answers")
 async def submit_user_answers(
     case_id: str,
     answers_input: UserAnswersInput,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_optional_current_user)
 ):
     db = get_database()
     await verify_case_ownership(case_id, current_user, db)
@@ -113,56 +114,67 @@ async def chat_with_ai_assistant(
     db = get_database()
     case_doc = await verify_case_ownership(case_id, current_user, db)
     
-    rag_service = RAGService(db)
     try:
-        # Retrieve context from RAG vector store
-        query_text = f"{chat_input.query}. Case: {case_doc.get('title', '')}. Category: {case_doc.get('category', '')}"
-        query_vector = rag_service.encoder.encode([query_text])[0]
-        retrieved_docs = rag_service.vector_store.search(query_vector, top_k=3)
-        
+        # Match relevant statutory provisions directly (sub-millisecond)
+        category = str(case_doc.get("category", "")).lower()
+        title_lower = str(case_doc.get("title", "")).lower()
+        desc_lower = str(case_doc.get("description", "")).lower()
+        query_lower = chat_input.query.lower()
+
+        matched_docs = []
+        for doc in LEGAL_KNOWLEDGE_BASE:
+            doc_cat = doc.get("category", "").lower()
+            doc_content = doc.get("content", "").lower()
+            if (doc_cat in category or category in doc_cat or 
+                doc_cat in title_lower or doc_cat in query_lower or
+                any(word in doc_content for word in query_lower.split() if len(word) > 4)):
+                matched_docs.append(doc)
+
+        if not matched_docs:
+            matched_docs = LEGAL_KNOWLEDGE_BASE[:2]
+
         context_str = ""
         sources = []
-        for i, (doc, score) in enumerate(retrieved_docs, 1):
-            sources.append(doc.get("source", "Consumer Protection Law"))
-            context_str += f"\n- {doc.get('title')}: {doc.get('content')} (Source: {doc.get('source')})\n"
+        for doc in matched_docs[:3]:
+            src = doc.get("source", "Consumer Protection Act 2019")
+            if src not in sources:
+                sources.append(src)
+            context_str += f"\n- {doc.get('title')}: {doc.get('content')}\n"
 
-        system_prompt = (
-            "You are an expert AI Consumer Rights Legal Attorney assisting a consumer.\n"
-            "Provide direct, authoritative, grounded, and concise advice based on statutory consumer protection laws.\n"
-            "Use clean Markdown formatting with clear bullet points when appropriate."
-        )
-        
+        # Evidence files
+        evidence_cursor = db.evidence.find({"case_id": case_id})
+        evidence_files = await evidence_cursor.to_list(length=20)
+        evidence_str = ", ".join([f"{e.get('original_filename')} ({e.get('evidence_type', 'doc')})" for e in evidence_files]) if evidence_files else "None attached yet"
+
+        # User answers
+        user_answers = case_doc.get("user_answers", {})
+        answers_str = "\n".join([f"- {k}: {v}" for k, v in user_answers.items()]) if user_answers else "None recorded yet"
+
         user_prompt = (
-            f"Case Title: {case_doc.get('title', 'Grievance')}\n"
-            f"Case Description: {case_doc.get('description', '')}\n"
-            f"Retrieved Legal Context:\n{context_str}\n\n"
-            f"Consumer Question: {chat_input.query}\n\n"
-            f"Provide a helpful, precise legal guidance response:"
+            f"### CASE CONTEXT\n"
+            f"- Title: {case_doc.get('title')}\n"
+            f"- Category: {case_doc.get('category', 'general')}\n"
+            f"- Status: {case_doc.get('status', 'preparing')}\n"
+            f"- Merchant/Vendor: {case_doc.get('vendor_name', 'Not specified')}\n"
+            f"- Claimed Amount: {case_doc.get('claimed_amount', 'Not specified')}\n"
+            f"- Description: {case_doc.get('description', '')}\n\n"
+            f"### FACTUAL DETAILS PROVIDED BY USER\n{answers_str}\n\n"
+            f"### ATTACHED EVIDENCE FILES\n{evidence_str}\n\n"
+            f"### RETRIEVED VERIFIED LEGAL CONTEXT\n{context_str}\n\n"
+            f"### USER'S CURRENT QUESTION\n{chat_input.query}\n\n"
+            f"Provide a clear, practical, and grounded answer in clean markdown format (use bullet points or numbered lists where appropriate, bold key labels, and keep paragraphs well-spaced):"
         )
 
-        answer = await rag_service.provider.generate_text(
-            system_prompt=system_prompt,
+        provider = GroqProvider()
+        answer = await provider.generate_text(
+            system_prompt=CASE_ASSISTANT_SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            temperature=0.3
+            temperature=0.2
         )
-        return AIChatResponse(answer=answer, sources=sources)
+        return AIChatResponse(answer=answer, sources=sources if sources else ["Consumer Protection Act 2019"])
     except Exception as e:
-        # Dynamic fallback addressing the specific user question when API key is unconfigured
-        q_lower = chat_input.query.lower().strip()
-        case_title = case_doc.get("title", "Grievance")
-        category = case_doc.get("category", "Consumer Dispute")
-        
-        if "notice" in q_lower or "ignore" in q_lower or "refuse" in q_lower:
-            ans = f"Regarding '{case_title}': If the merchant ignores your 14-day formal notice, you can file a direct statutory petition on the e-Daakhil consumer forum portal under CPA 2019 Section 35. Forums issue ex-parte directives and statutory interest if vendors fail to respond."
-        elif "bank" in q_lower or "ombudsman" in q_lower or "debit" in q_lower or "charge" in q_lower:
-            ans = f"For banking/digital transaction disputes in '{case_title}': Under the RBI Ombudsman Scheme 2021, zero customer liability applies if reported within 3 working days. Banks must credit shadow funds within 10 working days of written reporting."
-        elif "refund" in q_lower or "interest" in q_lower or "money" in q_lower or "claim" in q_lower:
-            ans = f"For your claim regarding '{case_title}': You are entitled to demand a 100% refund, along with statutory interest of 9%–12% p.a. calculated from the initial grievance date under CPA 2019 Section 83."
-        else:
-            ans = (
-                f"Statutory Legal Guidance for '{case_title}' ({category}):\n\n"
-                f"- **Your Query**: \"{chat_input.query}\"\n"
-                f"- **Applicable Statute**: Consumer Protection Act 2019, Section 2(47) (Unfair Trade Practice) & Section 83 (Service Deficiency).\n"
-                f"- **Statutory Remedy**: The merchant is legally required to resolve valid grievances or issue a full refund within 14 calendar days of receiving a formal legal notice."
-            )
-        return AIChatResponse(answer=ans, sources=["Consumer Protection Act 2019", "RBI Ombudsman Regulations"])
+        logger.warning(f"AI Assistant call failed ({e}). Returning graceful fallback.")
+        return AIChatResponse(
+            answer="I'm unable to analyze this case right now. Your existing case information is unchanged. Please try again in a moment.",
+            sources=["Case Record"]
+        )
