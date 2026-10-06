@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MarkdownViewProps {
   content: string;
@@ -7,9 +8,22 @@ interface MarkdownViewProps {
 }
 
 export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className = '' }) => {
+  // Normalize potentially broken or squashed markdown tables
+  const formattedContent = useMemo(() => {
+    if (!content) return '';
+    let text = content;
+    
+    // Fix tables squashed onto single lines (e.g., "||" or "| |" where row breaks should be)
+    text = text.replace(/\|\s*\|\s*([^|\n]+)/g, '|\n| $1');
+    text = text.replace(/\|\s*\|\s*-/g, '|\n|-');
+
+    return text;
+  }, [content]);
+
   return (
     <div className={`prose-sm text-xs leading-relaxed text-slate-800 ${className}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
             <h1 className="text-sm font-bold text-slate-900 mt-3 mb-1.5 pb-1 border-b border-slate-200">
@@ -68,10 +82,42 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className =
           ),
           hr: () => (
             <hr className="my-3 border-slate-200" />
+          ),
+          table: ({ children }) => (
+            <div className="my-2.5 overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200 text-left text-[11px]">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-slate-50 font-semibold text-slate-900">
+              {children}
+            </thead>
+          ),
+          tbody: ({ children }) => (
+            <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
+              {children}
+            </tbody>
+          ),
+          tr: ({ children }) => (
+            <tr className="hover:bg-slate-50/50 transition-colors">
+              {children}
+            </tr>
+          ),
+          th: ({ children }) => (
+            <th className="px-3 py-2 text-[11px] font-semibold text-slate-900">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="px-3 py-2 text-[11px] leading-relaxed">
+              {children}
+            </td>
           )
         }}
       >
-        {content}
+        {formattedContent}
       </ReactMarkdown>
     </div>
   );

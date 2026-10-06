@@ -6,7 +6,11 @@ from typing import Optional, Dict, Any, List, Tuple
 from bson import ObjectId
 
 from backend.shared.database import get_database, safe_object_id
-from backend.complaints.models import ComplaintResponse, ComplaintStatusEnum
+from backend.complaints.models import (
+    ComplaintResponse,
+    ComplaintStatusEnum,
+    ComplaintCreateInput
+)
 from backend.ai.providers.groq import GroqProvider
 from backend.ai.prompts.complaint_generation import (
     COMPLAINT_GENERATION_SYSTEM_PROMPT,
@@ -26,7 +30,8 @@ class ComplaintService:
         self,
         case_id: str,
         user_id: str,
-        custom_instructions: Optional[str] = None
+        custom_instructions: Optional[str] = None,
+        input_data: Optional[ComplaintCreateInput] = None
     ) -> Dict[str, Any]:
         # 1. Fetch Case safely
         safe_case_id = safe_object_id(case_id)
@@ -46,6 +51,49 @@ class ComplaintService:
                 "issue_type": "Warranty & Refund Dispute",
                 "desired_resolution": "Full Refund of Purchase Price plus Statutory Interest"
             }
+
+        # Fetch user info if available
+        user_doc = None
+        if ObjectId.is_valid(user_id):
+            try:
+                user_doc = await self.db["users"].find_one({"_id": ObjectId(user_id)})
+            except Exception:
+                pass
+
+        # Resolve complainant details
+        complainant_name = (input_data.complainant_name if input_data and input_data.complainant_name else (user_doc.get("name") if user_doc else None)) or "Aggrieved Consumer"
+        complainant_phone = input_data.complainant_phone if input_data and input_data.complainant_phone else None
+        complainant_email = (input_data.complainant_email if input_data and input_data.complainant_email else (user_doc.get("email") if user_doc else None))
+        complainant_city = input_data.complainant_city if input_data and input_data.complainant_city else None
+        complainant_state = input_data.complainant_state if input_data and input_data.complainant_state else None
+        
+        complainant_address = None
+        if input_data and input_data.complainant_address:
+            complainant_address = input_data.complainant_address
+        elif complainant_city or complainant_state:
+            complainant_address = f"{complainant_city or ''}, {complainant_state or ''}, India".strip(", ")
+
+        # Resolve company details
+        company_name = (input_data.company_name if input_data and input_data.company_name else (case.get("vendor_name") or case.get("vendorName") or case.get("title"))) or "Opposite Party / Merchant"
+        company_address = input_data.company_address if input_data and input_data.company_address else None
+        company_email = input_data.company_email if input_data and input_data.company_email else None
+
+        from backend.complaints.company_directory import lookup_company_info
+        if not company_address or not company_email:
+            lookup = lookup_company_info(company_name, city=complainant_city or "", state=complainant_state or "")
+            if not company_address:
+                company_address = lookup.get("address")
+            if not company_email:
+                company_email = lookup.get("email")
+
+        # Resolve dispute particulars
+        order_id = (input_data.order_id if input_data and input_data.order_id else (case.get("transaction_id") or case.get("transactionId"))) or "TXN-RECORDED"
+        purchase_date = (input_data.purchase_date if input_data and input_data.purchase_date else (case.get("purchase_date") or case.get("purchaseDate"))) or "Recent"
+        claimed_amount = (input_data.claimed_amount if input_data and input_data.claimed_amount else (case.get("claimed_amount") or case.get("claimedAmount"))) or "Full Value of Disputed Transaction"
+        desired_resolution = (input_data.desired_resolution if input_data and input_data.desired_resolution else (case.get("desired_resolution") or case.get("desiredResolution"))) or "Full Refund to Original Payment Source"
+        notice_period_days = (input_data.notice_period_days if input_data and input_data.notice_period_days else 15)
+
+        active_custom_instructions = (input_data.custom_instructions if input_data and input_data.custom_instructions else custom_instructions) or ""
 
         # 2. Fetch Evidence
         evidence_list = []
@@ -74,11 +122,22 @@ class ComplaintService:
             case_description=case.get("description", ""),
             category=case.get("category", "General Consumer"),
             issue_type=case.get("issue_type", "Consumer Dispute"),
-            desired_resolution=case.get("desired_resolution", ""),
+            desired_resolution=desired_resolution,
             user_answers=case.get("answers", {}),
             evidence_list=evidence_list,
             statutory_provisions=statutory_laws,
-            custom_instructions=custom_instructions or ""
+            custom_instructions=active_custom_instructions,
+            complainant_name=complainant_name,
+            complainant_phone=complainant_phone,
+            complainant_email=complainant_email,
+            complainant_address=complainant_address,
+            company_name=company_name,
+            company_address=company_address,
+            company_email=company_email,
+            order_id=order_id,
+            purchase_date=purchase_date,
+            claimed_amount=claimed_amount,
+            notice_period_days=notice_period_days
         )
 
         # 5. Invoke Groq LLM

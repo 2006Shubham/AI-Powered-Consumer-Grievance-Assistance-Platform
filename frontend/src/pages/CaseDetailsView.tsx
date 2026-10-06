@@ -28,7 +28,7 @@ export const CaseDetailsView: React.FC = () => {
   }>>([
     {
       sender: 'ai',
-      text: "### Grievance Assistant Ready\nI have reviewed your case facts and applicable consumer protection statutes. Ask me any question regarding statutory compensation, documenting merchant refusal, or preparing a formal demand notice.",
+      text: "### Case Assistant Ready\nI have reviewed your grievance details. Ask me anything about documenting your claim, what steps to take with customer care, or preparing a formal complaint letter.",
       time: 'Just now'
     }
   ]);
@@ -304,15 +304,16 @@ export const CaseDetailsView: React.FC = () => {
             {/* Suggestion Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 border-t border-slate-100">
               {[
-                "What are my legal rights?",
-                "How to document refusal?",
-                "Can I demand a refund?"
+                "What are my refund rights?",
+                "Can I demand a full refund or replacement?",
+                "How do I escalate if the company refuses to respond?",
+                "What if they delay the repair for weeks?"
               ].map((chip, idx) => (
                 <button
                   key={idx}
                   disabled={isAiReplying}
                   onClick={() => handleSendQuery(chip)}
-                  className="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded transition-colors disabled:opacity-50 shrink-0 font-medium"
+                  className="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-md transition-colors disabled:opacity-50 shrink-0 font-medium btn-tactile"
                 >
                   {chip}
                 </button>
@@ -353,6 +354,7 @@ export const CaseDetailsView: React.FC = () => {
         isOpen={showNoticeModal}
         onClose={() => setShowNoticeModal(false)}
         onComplaintGenerated={refreshCases}
+        currentCase={currentCase}
       />
 
     </div>

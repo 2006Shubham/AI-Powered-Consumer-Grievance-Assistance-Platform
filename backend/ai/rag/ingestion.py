@@ -9,14 +9,16 @@ def initialize_vector_database():
     try:
         from backend.ai.rag.qdrant_store import QdrantVectorStore
         vector_store = QdrantVectorStore(dimension=384)
-        info = vector_store.client.get_collection("consumer_legal_knowledge")
-        if info and info.points_count > 0:
+        if vector_store.client is not None:
+            info = vector_store.client.get_collection("consumer_legal_knowledge")
+            if info and info.points_count > 0:
+                return vector_store
+            encoder = EmbeddingService()
+            texts = [doc["content"] for doc in LEGAL_KNOWLEDGE_BASE]
+            embeddings = encoder.encode(texts)
+            vector_store.add_documents(embeddings, LEGAL_KNOWLEDGE_BASE)
             return vector_store
-        encoder = EmbeddingService()
-        texts = [doc["content"] for doc in LEGAL_KNOWLEDGE_BASE]
-        embeddings = encoder.encode(texts)
-        vector_store.add_documents(embeddings, LEGAL_KNOWLEDGE_BASE)
-        return vector_store
+        raise RuntimeError("Qdrant client not available")
     except Exception as e:
         logger.info(f"Qdrant store initialization notice ({e}). Using FAISS / In-Memory vector store...")
         vector_store = FAISSVectorStore(dimension=384)

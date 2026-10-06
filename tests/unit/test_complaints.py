@@ -53,3 +53,37 @@ def test_build_complaint_prompt():
     assert "invoice.pdf" in prompt
     assert "Consumer Protection Act 2019 Section 2(11)" in prompt
     assert "Include 15-day notice period" in prompt
+
+def test_company_directory_lookup():
+    from backend.complaints.company_directory import lookup_company_info
+    
+    # Regional lookup
+    res_flipkart = lookup_company_info("Flipkart", city="Mumbai", state="Maharashtra")
+    assert "Godrej Coliseum" in res_flipkart["address"]
+    assert "flipkart.com" in res_flipkart["email"]
+
+    res_amazon = lookup_company_info("Amazon India", city="Gurugram", state="Haryana")
+    assert "Ambience" in res_amazon["address"]
+    assert "amazon.in" in res_amazon["email"]
+
+    res_unknown = lookup_company_info("XYZ Local Electronics", city="Pune", state="Maharashtra")
+    assert "XYZ Local Electronics" in res_unknown["address"]
+    assert "Pune, Maharashtra" in res_unknown["address"]
+
+def test_complaint_create_input_structured_fields():
+    data = ComplaintCreateInput(
+        complainant_name="Rajesh Kumar",
+        complainant_phone="9876543210",
+        complainant_email="rajesh@example.com",
+        complainant_city="Bengaluru",
+        complainant_state="Karnataka",
+        company_name="Flipkart",
+        order_id="OD123456789",
+        claimed_amount="₹30,000",
+        desired_resolution="Full refund to bank account"
+    )
+    assert data.complainant_name == "Rajesh Kumar"
+    assert data.complainant_city == "Bengaluru"
+    assert data.order_id == "OD123456789"
+    assert data.claimed_amount == "₹30,000"
+

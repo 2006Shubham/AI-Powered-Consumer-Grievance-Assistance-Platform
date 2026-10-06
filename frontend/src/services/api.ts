@@ -26,6 +26,32 @@ export interface Case {
   updated_at: string;
 }
 
+export interface ComplaintGeneratePayload {
+  custom_instructions?: string;
+  complainant_name?: string;
+  complainant_phone?: string;
+  complainant_email?: string;
+  complainant_city?: string;
+  complainant_state?: string;
+  complainant_address?: string;
+  company_name?: string;
+  company_address?: string;
+  company_email?: string;
+  order_id?: string;
+  purchase_date?: string;
+  claimed_amount?: string;
+  desired_resolution?: string;
+  notice_period_days?: number;
+}
+
+export interface CompanyLookupResult {
+  company_name: string;
+  address: string;
+  email: string;
+  nodal_title: string;
+  source: string;
+}
+
 class ApiService {
   private getToken(): string | null {
     return localStorage.getItem('access_token');
@@ -222,10 +248,30 @@ class ApiService {
   }
 
   // Complaint Generator Methods
-  async generateComplaint(caseId: string, customInstructions?: string): Promise<any> {
+  async generateComplaint(caseId: string, payload?: string | ComplaintGeneratePayload): Promise<any> {
+    const body = typeof payload === 'string'
+      ? { custom_instructions: payload }
+      : (payload || {});
+
     return this.request(`/cases/${caseId}/complaint/generate`, {
       method: 'POST',
-      body: JSON.stringify({ custom_instructions: customInstructions }),
+      body: JSON.stringify(body),
+    });
+  }
+
+  async lookupCompanyInfo(
+    caseId: string,
+    companyName: string,
+    city?: string,
+    state?: string
+  ): Promise<CompanyLookupResult> {
+    return this.request(`/cases/${caseId}/complaint/company-lookup`, {
+      method: 'POST',
+      body: JSON.stringify({
+        company_name: companyName,
+        city: city || '',
+        state: state || '',
+      }),
     });
   }
 

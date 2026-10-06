@@ -24,6 +24,37 @@ const normalizeStatus = (st?: string): CaseStatus => {
   return 'In Progress';
 };
 
+export const extractAmountFromDesc = (desc?: string): string | null => {
+  if (!desc) return null;
+  const currMatch = desc.match(/(?:₹|rs\.?|inr)\s*([0-9]{1,3}(?:,[0-9]{2,3})+|[0-9]{3,7})/i);
+  if (currMatch) {
+    const val = parseInt(currMatch[1].replace(/,/g, ''), 10);
+    if (!isNaN(val)) return `₹${val.toLocaleString('en-IN')}`;
+  }
+  const ctxMatch = desc.match(/\b(?:bought|paid|spent|cost|worth|for|price of)\s+(?:for\s+)?(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{2,3})+|[0-9]{3,7})\b/i);
+  if (ctxMatch) {
+    const val = parseInt(ctxMatch[1].replace(/,/g, ''), 10);
+    if (!isNaN(val) && val >= 100) return `₹${val.toLocaleString('en-IN')}`;
+  }
+  return null;
+};
+
+export const extractVendorFromDesc = (desc?: string, title?: string): string | null => {
+  const text = `${title || ''} ${desc || ''}`.toLowerCase();
+  const brands = [
+    { name: 'HP India', match: 'hp' },
+    { name: 'Acer India', match: 'acer' },
+    { name: 'Samsung India', match: 'samsung' },
+    { name: 'Apple India', match: 'apple' },
+    { name: 'Flipkart', match: 'flipkart' },
+    { name: 'Amazon India', match: 'amazon' },
+    { name: 'HDFC Bank', match: 'hdfc' },
+    { name: 'Tata Croma', match: 'croma' }
+  ];
+  const detected = brands.filter(b => text.includes(b.match)).map(b => b.name);
+  return detected.length > 0 ? detected.slice(0, 2).join(' / ') : null;
+};
+
 interface CaseContextType {
   cases: GrievanceCase[];
   activeCaseId: string | null;
@@ -60,16 +91,19 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (Array.isArray(apiCases) && apiCases.length > 0) {
         const mapped: GrievanceCase[] = apiCases.map((c: any) => {
           const id = c.id || c._id;
+          const fallbackVendor = extractVendorFromDesc(c.description, c.title);
+          const fallbackAmount = extractAmountFromDesc(c.description);
+
           return {
             id,
             title: c.title || 'Consumer Grievance',
             category: normalizeCategory(c.category),
             status: normalizeStatus(c.status),
             urgency: 'High',
-            vendorName: c.vendor_name || c.vendorName || 'ElectroTech Megastore',
+            vendorName: c.vendor_name || c.vendorName || fallbackVendor || 'Company / Merchant',
             purchaseDate: c.purchase_date || (c.created_at ? c.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
             transactionId: c.transaction_id || `TXN-${id.substring(0, 6).toUpperCase()}`,
-            claimedAmount: c.claimed_amount || '₹1,299.00',
+            claimedAmount: c.claimed_amount || fallbackAmount || 'Amount not specified',
             desiredResolution: c.desired_resolution || 'Full Refund',
             createdDate: c.created_at ? c.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
             lastUpdated: c.updated_at ? c.updated_at.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -89,10 +123,10 @@ export const CaseProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ],
             evidence: [],
             ragGuidance: {
-              sectionTitle: `Statutory Protection (${normalizeCategory(c.category)})`,
-              actName: 'Consumer Protection Act 2019',
-              legalRightSummary: 'Statutory protection against unfair trade practices and product deficiency.',
-              recommendedAction: 'Serve formal 15-day pre-litigation demand notice.',
+              sectionTitle: `Consumer Rights (${normalizeCategory(c.category)})`,
+              actName: 'Consumer Protection Framework',
+              legalRightSummary: 'Protection against unfair trade practices, defective products, and warranty denials.',
+              recommendedAction: 'Send formal complaint notice to nodal grievance officer.',
               confidenceScore: 90
             }
           };

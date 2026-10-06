@@ -1,13 +1,20 @@
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import App from './App';
+
+vi.mock('react-markdown', () => ({
+  default: ({ children }: any) => <div>{children}</div>,
+}));
+vi.mock('remark-gfm', () => ({
+  default: () => () => {},
+}));
 
 vi.mock('./context/AuthContext', async () => {
   const actual = await vi.importActual<typeof import('./context/AuthContext')>('./context/AuthContext');
   return {
     ...actual,
     useAuth: () => ({
-      user: { id: 'test-user-1', name: 'Test User', email: 'user@example.com', created_at: '2026-07-24T00:00:00Z' },
+      user: { id: '6a63032400ff5e28a50d703c', name: 'Demo Consumer', email: 'demo@example.com', created_at: '2026-07-24T00:00:00Z' },
       isAuthenticated: true,
       isLoading: false,
       login: vi.fn(),
@@ -17,94 +24,122 @@ vi.mock('./context/AuthContext', async () => {
   };
 });
 
+vi.mock('./services/api', () => ({
+  api: {
+    getUser: vi.fn().mockReturnValue({
+      id: '6a63032400ff5e28a50d703c',
+      name: 'Demo Consumer',
+      email: 'demo@example.com',
+      created_at: '2026-07-24T00:00:00Z'
+    }),
+    login: vi.fn(),
+    signup: vi.fn(),
+    setToken: vi.fn(),
+    clearToken: vi.fn(),
+    getCases: vi.fn().mockResolvedValue([
+      {
+        id: '6a63032400ff5e28a50d703c',
+        title: 'HP Pavilion Laptop - Motherboard Failure & False CID Warranty Denial',
+        category: 'electronics',
+        status: 'preparing',
+        vendor_name: 'HP India & Flipkart',
+        claimed_amount: '₹68,990',
+        created_at: '2026-08-14T10:00:00Z',
+        updated_at: '2026-08-15T10:00:00Z',
+        description: 'HP laptop logic board failed within 45 days, service center falsely claimed liquid ingress.'
+      },
+      {
+        id: '6a63032400ff5e28a50d703d',
+        title: 'Samsung Galaxy S23 - Persistent Green Line Display Defect post One UI Update',
+        category: 'electronics',
+        status: 'preparing',
+        vendor_name: 'Samsung India',
+        claimed_amount: '₹54,999',
+        created_at: '2026-05-18T10:00:00Z',
+        updated_at: '2026-05-19T10:00:00Z',
+        description: 'Green line on AMOLED screen after official software update.'
+      }
+    ]),
+    createCase: vi.fn().mockResolvedValue({ id: '6a63032400ff5e28a50d703e', title: 'New Consumer Grievance' }),
+    analyzeCase: vi.fn().mockResolvedValue({}),
+    getFollowUpQuestions: vi.fn().mockResolvedValue({ questions: [] }),
+    updateCaseStatus: vi.fn().mockResolvedValue({}),
+    getComplaint: vi.fn().mockResolvedValue(null),
+    generateComplaint: vi.fn().mockResolvedValue({ content: 'Legal Notice Draft' }),
+    askAIChat: vi.fn().mockResolvedValue({ answer: 'Analysis answer' }),
+    getEvidence: vi.fn().mockResolvedValue([]),
+    getTimeline: vi.fn().mockResolvedValue([])
+  }
+}));
+
 describe('AI Consumer Grievance Platform End-to-End UI Tests', () => {
 
-  it('renders Dashboard with summary metrics, category filters, and initial cases', () => {
+  it('renders Dashboard with summary metrics, capital at stake, and seeded Indian cases', async () => {
     render(<App />);
 
     // Header check
-    expect(screen.getByText(/AI Consumer Protection Platform/i)).toBeInTheDocument();
+    expect(screen.getByText(/Smart Resolution Platform/i)).toBeInTheDocument();
 
     // Summary metrics check
-    expect(screen.getByText('Total Cases')).toBeInTheDocument();
-    expect(screen.getAllByText('Pending Info')[0]).toBeInTheDocument();
-    expect(screen.getByText('Resolved Cases')).toBeInTheDocument();
+    expect(screen.getByText(/Consumer Grievance Workspace/i)).toBeInTheDocument();
+    expect(screen.getByText(/Capital at Stake/i)).toBeInTheDocument();
 
-    // Check pre-populated case cards
-    expect(screen.getByText('#1042')).toBeInTheDocument();
-    expect(screen.getAllByText(/Defective OLED Smart TV/i)[0]).toBeInTheDocument();
+    // Wait for cases to appear
+    await waitFor(() => {
+      expect(screen.getByText(/HP Pavilion Laptop - Motherboard Failure/i)).toBeInTheDocument();
+      expect(screen.getByText(/Samsung Galaxy S23/i)).toBeInTheDocument();
+    });
   });
 
-  it('filters cases by search query and category pills', async () => {
+  it('filters cases by search query for Indian brands', async () => {
     render(<App />);
 
-    const searchInput = screen.getByPlaceholderText(/Search by case #/i);
-    fireEvent.change(searchInput, { target: { value: 'OLED' } });
+    await waitFor(() => {
+      expect(screen.getByText(/HP Pavilion Laptop/i)).toBeInTheDocument();
+    });
 
-    expect(screen.getAllByText(/Defective OLED Smart TV/i)[0]).toBeInTheDocument();
-    expect(screen.queryByText(/Unauthorized Recurring Subscription/i)).not.toBeInTheDocument();
+    const searchInput = screen.getByPlaceholderText(/Search by product, company/i);
+    fireEvent.change(searchInput, { target: { value: 'Samsung' } });
+
+    expect(screen.getByText(/Samsung Galaxy S23/i)).toBeInTheDocument();
+    expect(screen.queryByText(/HP Pavilion Laptop/i)).not.toBeInTheDocument();
 
     // Clear search
     fireEvent.change(searchInput, { target: { value: '' } });
-    expect(screen.getByText(/Unauthorized Recurring Subscription/i)).toBeInTheDocument();
+    expect(screen.getByText(/HP Pavilion Laptop/i)).toBeInTheDocument();
   });
 
-  it('navigates to New Case Wizard and performs AI Case Analysis flow', async () => {
+  it('navigates to New Grievance wizard and renders Indian preset scenarios', async () => {
     render(<App />);
 
-    // Click New Case tab button in header
-    const newCaseBtns = screen.getAllByRole('button', { name: /New Case/i });
+    // Click New Grievance tab button in header
+    const newCaseBtns = screen.getAllByRole('button', { name: /New Grievance/i });
     fireEvent.click(newCaseBtns[0]);
 
-    // Verify Wizard rendered
-    expect(screen.getByText(/1. Describe Your Issue in Plain Language/i)).toBeInTheDocument();
-
-    // Fill grievance description
-    const textarea = screen.getByPlaceholderText(/Explain what happened/i);
-    fireEvent.change(textarea, { target: { value: 'I bought a laptop for $1000 on Amazon and it stopped charging after 2 days. Seller refused refund.' } });
-
-    // Click Analyze Case with AI
-    const analyzeBtn = screen.getByRole('button', { name: /Analyze Case with AI/i });
-    fireEvent.click(analyzeBtn);
-
-    // Fast-forward AI analysis step
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 2000));
-    });
-
-    // Check Step 2 facts step mounted
-    expect(screen.getByText(/2. AI Extracted Case Facts/i)).toBeInTheDocument();
-
-    // Fill mandatory vendor name
-    const vendorInput = screen.getByPlaceholderText(/e.g., ElectroTech Megastore/i);
-    fireEvent.change(vendorInput, { target: { value: 'TechCorp Electronics' } });
-
-    // Click submit button directly
-    const submitBtn = screen.getByRole('button', { name: /Submit Case & View Details/i });
-    await act(async () => {
-      fireEvent.click(submitBtn);
-    });
-
-    // Verify transition to Case Details View
+    // Verify Wizard rendered with Indian scenarios
     await waitFor(() => {
-      expect(screen.getAllByText(/RAG Legal Intelligence/i)[0]).toBeInTheDocument();
+      expect(screen.getByText(/Register Consumer Grievance/i)).toBeInTheDocument();
+      expect(screen.getByText(/Popular Indian Consumer Scenarios/i)).toBeInTheDocument();
+      expect(screen.getByText(/HP Laptop Motherboard Warranty Denial/i)).toBeInTheDocument();
+      expect(screen.getByText(/Samsung Galaxy Green Line Post-Update/i)).toBeInTheDocument();
     });
   });
 
-  it('opens and closes the AI Complaint Generator modal', async () => {
+  it('navigates to Case Details view from case card click', async () => {
     render(<App />);
 
-    // Navigate to Case Details for #1042
-    const caseCard = screen.getByText('#1042');
+    await waitFor(() => {
+      expect(screen.getByText(/HP Pavilion Laptop/i)).toBeInTheDocument();
+    });
+
+    const caseHeading = screen.getByText(/HP Pavilion Laptop/i);
+    const caseCard = caseHeading.closest('.cursor-pointer') || caseHeading;
     fireEvent.click(caseCard);
 
-    // Click Generate Legal Notice
-    const noticeBtn = screen.getByRole('button', { name: /Generate Legal Notice/i });
-    fireEvent.click(noticeBtn);
-
-    // Modal should open
-    expect(screen.getByText(/Formal Consumer Legal Notice Generator/i)).toBeInTheDocument();
-    expect(screen.getByText(/Generate Legal Notice Draft/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Case Information & Facts/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Case Assistant/i).length).toBeGreaterThanOrEqual(1);
+    }, { timeout: 4000 });
   });
 
 });

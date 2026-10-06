@@ -1,27 +1,23 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
-COMPLAINT_GENERATION_SYSTEM_PROMPT = """You are a senior Consumer Rights Legal Specialist assisting an aggrieved consumer in drafting a formal Legal Notice and Grievance Complaint under Indian Consumer Protection laws.
+COMPLAINT_GENERATION_SYSTEM_PROMPT = """You are a senior consumer dispute specialist drafting a formal, professional legal complaint notice on behalf of an Indian consumer.
 
-Your task is to draft a comprehensive, legally structured, professional, and firm Formal Legal Notice / Grievance Complaint based on the provided Case File and statutory legal provisions.
+Your goal is to produce an authoritative, completely finished, and professionally formatted complaint notice ready to send immediately to the company's nodal grievance desk and customer escalation leadership.
 
-STRUCTURE OF THE LEGAL NOTICE:
-1. RECIPIENT HEADER:
-   - To: [Opposite Party / Merchant / Bank / Company Name]
-   - Attention: Nodal Officer / Grievance Officer / Customer Support Head
-2. SUBJECT LINE:
-   - Clear, urgent subject line referencing Order/Account/Transaction Number.
-3. STATEMENT OF FACTS & CHRONOLOGICAL BACKGROUND:
-   - Comprehensive factual background of the grievance, dates, amounts paid, product/service details, and attempt to resolve.
-4. STATUTORY VIOLATIONS & LEGAL GROUNDS:
-   - Specific statutory provisions violated (cite the provided statutory references e.g. Consumer Protection Act 2019, E-Commerce Rules 2020, Banking Ombudsman Scheme).
-5. EVIDENCE INVENTORY:
-   - List of supporting documents attached (Invoices, Receipts, Transaction Statements, Communications).
-6. DEMANDS & RELIEF CLAIMED:
-   - Specific remedies sought (Full Refund of Rs. X, Replacement, Compensation for Mental Agony Rs. Y, Litigation Costs).
-7. NOTICE PERIOD & ACTION WARNING:
-   - Explicit 15-day deadline to comply, failing which formal legal proceedings will be instituted before the District Consumer Disputes Redressal Commission / Banking Ombudsman.
-
-Maintain a professional, formal, assertive, and legal tone. Do not invent false facts or unprovided amounts. Use placeholders like [Consumer Name], [Merchant Address] where specific personal info is not provided in context.
+CRITICAL RULES FOR COMPLETENESS & PROFESSIONALISM:
+1. NEVER output placeholder brackets such as [Consumer Name], [Merchant Address], [Order ID], [Date], or [Amount].
+2. Use the EXACT complainant details, company address, emails, dates, order IDs, and claimed monetary amounts provided in the prompt.
+3. Structure the complaint letter cleanly:
+   - Header with Date, Complainant details, and Recipient company details
+   - Clear, formal Subject Line citing Order ID and product/service
+   - Chronological Statement of Facts detailing what happened
+   - Specific Breaches (deficiency of service, unfair trade practice, breach of warranty/return commitment)
+   - Evidence Summary (listing invoice, order reference, chats, service center rejection)
+   - Clear Demand & Remedy (exact refund amount, replacement, or repair)
+   - Explicit compliance notice period (e.g. 15 days), warning of formal escalation to National Consumer Helpline (1915) / Consumer Commission.
+   - Formal Sign-off with the complainant's name and contact information.
+4. Maintain a firm, polite, factual, and unambiguous tone.
+5. Do NOT include extraneous conversational preamble or postscript (e.g., do not say "Here is your letter:"). Output ONLY the formal complaint letter itself.
 """
 
 def build_complaint_prompt(
@@ -33,19 +29,48 @@ def build_complaint_prompt(
     user_answers: Dict[str, Any],
     evidence_list: List[Dict[str, Any]],
     statutory_provisions: List[Dict[str, Any]],
-    custom_instructions: str = ""
+    custom_instructions: str = "",
+    complainant_name: Optional[str] = None,
+    complainant_phone: Optional[str] = None,
+    complainant_email: Optional[str] = None,
+    complainant_address: Optional[str] = None,
+    company_name: Optional[str] = None,
+    company_address: Optional[str] = None,
+    company_email: Optional[str] = None,
+    order_id: Optional[str] = None,
+    purchase_date: Optional[str] = None,
+    claimed_amount: Optional[str] = None,
+    notice_period_days: Optional[int] = 15
 ) -> str:
-    prompt = f"### CASE INFORMATION:\n"
-    prompt += f"- Case Title: {case_title}\n"
-    prompt += f"- Category: {category}\n"
-    prompt += f"- Issue Type: {issue_type}\n"
-    prompt += f"- Desired Resolution: {desired_resolution or 'Full Refund & Compensation'}\n"
-    prompt += f"- Description: {case_description}\n\n"
+    prompt = "### VERIFIED COMPLAINT PARTICULARS:\n"
+    prompt += f"- Complainant Name: {complainant_name or 'Aggrieved Consumer'}\n"
+    if complainant_phone:
+        prompt += f"- Complainant Phone: {complainant_phone}\n"
+    if complainant_email:
+        prompt += f"- Complainant Email: {complainant_email}\n"
+    if complainant_address:
+        prompt += f"- Complainant Address: {complainant_address}\n"
+
+    prompt += f"\n- Opposite Party (Company / Seller): {company_name or 'Company / Merchant'}\n"
+    if company_address:
+        prompt += f"- Company Registered/Regional Office: {company_address}\n"
+    if company_email:
+        prompt += f"- Company Nodal Email: {company_email}\n"
+
+    prompt += f"\n- Dispute Matter / Product: {case_title}\n"
+    prompt += f"- Order / Transaction / Reference ID: {order_id or 'TXN-RECORDED'}\n"
+    prompt += f"- Purchase / Incident Date: {purchase_date or 'Recent'}\n"
+    prompt += f"- Disputed / Claimed Amount: {claimed_amount or 'Full Value of Purchase'}\n"
+    prompt += f"- Desired Relief / Remedy: {desired_resolution or 'Full Refund to Original Payment Source'}\n"
+    prompt += f"- Notice Compliance Period: {notice_period_days or 15} calendar days\n"
+    prompt += f"- Category / Issue Type: {category} ({issue_type})\n\n"
+
+    prompt += f"### STATEMENT OF FACTS & INCIDENT HISTORY:\n{case_description}\n\n"
 
     if user_answers:
-        prompt += "### ADDITIONAL FACTS PROVIDED BY CONSUMER:\n"
+        prompt += "### FACTUAL RESPONSES PROVIDED BY CONSUMER:\n"
         for q, a in user_answers.items():
-            prompt += f"- Q: {q} | A: {a}\n"
+            prompt += f"- {q}: {a}\n"
         prompt += "\n"
 
     if evidence_list:
@@ -55,16 +80,16 @@ def build_complaint_prompt(
         prompt += "\n"
 
     if statutory_provisions:
-        prompt += "### CITED STATUTORY LAWS & LEGAL RIGHTS (Qdrant Knowledge Base):\n"
+        prompt += "### RELEVANT CONSUMER RIGHTS & STATUTES:\n"
         for law in statutory_provisions:
             title = law.get('title') if isinstance(law, dict) else getattr(law, 'title', 'Statute')
             raw_text = (law.get('summary') or law.get('content') or '') if isinstance(law, dict) else (getattr(law, 'summary', None) or getattr(law, 'content', None) or '')
-            text_snippet = (raw_text[:300] + '...') if raw_text else ''
+            text_snippet = (raw_text[:250] + '...') if raw_text else ''
             prompt += f"- **{title}**: {text_snippet}\n"
         prompt += "\n"
 
     if custom_instructions:
-        prompt += f"### CONSUMER SPECIAL INSTRUCTIONS:\n{custom_instructions}\n\n"
+        prompt += f"### SPECIAL INSTRUCTIONS / SPECIFIC DEMANDS:\n{custom_instructions}\n\n"
 
-    prompt += "Draft the complete formal Legal Notice now:"
+    prompt += "Draft the complete, 100% finished formal Legal Notice now (without any bracketed placeholders):"
     return prompt

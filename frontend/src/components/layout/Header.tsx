@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scale, PlusCircle, LayoutDashboard, FolderOpen, Sparkles, LogOut } from 'lucide-react';
+import { Scale, PlusCircle, LayoutDashboard, FolderOpen, LogOut } from 'lucide-react';
 import { useCases } from '../../context/CaseContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -28,7 +28,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 py-3.5 transition-all shadow-xs">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 py-3 transition-all shadow-2xs">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         
         {/* Brand Logo */}
@@ -36,27 +36,27 @@ export const Header: React.FC = () => {
           onClick={() => setActiveTab('dashboard')}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shadow-indigo-600/20 group-hover:scale-105 transition-transform">
-            <Scale className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+            <Scale className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-lg text-slate-900 tracking-tight">Grievance<span className="text-indigo-600">AI</span></span>
-              <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full font-medium">
-                <Sparkles className="w-2.5 h-2.5 text-indigo-600" /> RAG System
+              <span className="font-extrabold text-lg text-slate-900 tracking-tight">Grievance<span className="text-indigo-600">AI</span></span>
+              <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full font-semibold">
+                India Redressal
               </span>
             </div>
-            <p className="text-xs text-slate-500 hidden sm:block">AI Consumer Protection Platform</p>
+            <p className="text-[11px] text-slate-500 hidden sm:block">Smart Resolution Platform</p>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <nav className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200">
+        <nav className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all btn-tactile ${
               activeTab === 'dashboard'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
@@ -66,14 +66,14 @@ export const Header: React.FC = () => {
 
           <button
             onClick={handleMyCasesClick}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all btn-tactile ${
               activeTab === 'case-details'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
             <FolderOpen className="w-3.5 h-3.5 text-slate-500" />
-            <span className="hidden sm:inline">My Cases</span>
+            <span className="hidden sm:inline">Disputes</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-mono">
               {cases.length}
             </span>
@@ -81,26 +81,26 @@ export const Header: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('new-case')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all btn-tactile ${
               activeTab === 'new-case'
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/20'
-                : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-800 border border-slate-200 hover:bg-slate-50'
             }`}
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>New Case</span>
+            <span>New Grievance</span>
           </button>
         </nav>
 
         {/* Right User & Actions */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pl-1">
-            <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xs">
+          <div className="flex items-center gap-2.5 pl-1">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-white font-bold text-xs shadow-2xs">
               {getUserInitials(user?.name)}
             </div>
             <div className="hidden lg:block text-left">
-              <div className="text-xs font-semibold text-slate-800">{user?.name || 'Verified User'}</div>
-              <div className="text-[10px] text-slate-500">{activeCount} active cases</div>
+              <div className="text-xs font-bold text-slate-900">{user?.name || 'Verified Consumer'}</div>
+              <div className="text-[10px] text-slate-500">{activeCount} active claims</div>
             </div>
           </div>
 

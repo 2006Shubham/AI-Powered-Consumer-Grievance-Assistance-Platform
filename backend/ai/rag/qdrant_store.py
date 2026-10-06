@@ -39,11 +39,30 @@ class QdrantVectorStore:
                     )
                     logger.info(f"Created Qdrant collection '{COLLECTION_NAME}' with size={self.dimension}")
             except Exception as e:
-                logger.error(f"Failed to initialize Qdrant Cloud connection ({e}). Falling back to local store.")
-                self.client = None
+                logger.warning(f"Failed to connect to remote Qdrant Cloud cluster ({e}). Initializing Qdrant in-memory engine...")
+                try:
+                    self.client = QdrantClient(location=":memory:")
+                    self.client.create_collection(
+                        collection_name=COLLECTION_NAME,
+                        vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE)
+                    )
+                    logger.info(f"Successfully initialized local in-memory Qdrant instance for '{COLLECTION_NAME}'.")
+                except Exception as ex:
+                    logger.error(f"In-memory Qdrant init failed ({ex}). Falling back to local numpy store.")
+                    self.client = None
         else:
-            logger.info("Qdrant credentials not configured. Using local vector store fallback.")
-            self.client = None
+            if HAS_QDRANT:
+                try:
+                    self.client = QdrantClient(location=":memory:")
+                    self.client.create_collection(
+                        collection_name=COLLECTION_NAME,
+                        vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE)
+                    )
+                    logger.info(f"Initialized local in-memory Qdrant instance for '{COLLECTION_NAME}'.")
+                except Exception:
+                    self.client = None
+            else:
+                self.client = None
 
         if not self.client:
             self.fallback_vectors: List[np.ndarray] = []

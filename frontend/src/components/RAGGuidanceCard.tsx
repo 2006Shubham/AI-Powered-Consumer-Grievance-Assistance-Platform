@@ -46,12 +46,12 @@ export const RAGGuidanceCard: React.FC<RAGGuidanceCardProps> = ({ caseId }) => {
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>RAG Legal Intelligence</span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-semibold border border-amber-200">
-                Grounded Statutory Law
+              <span>Smart Resolution Guidance</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200">
+                Verified Guidance
               </span>
             </h3>
-            <p className="text-xs text-slate-500">Consumer Protection Act 2019 & TRAI/RBI regulatory frameworks</p>
+            <p className="text-xs text-slate-500">Brand policies, warranty terms & consumer rights</p>
           </div>
         </div>
 

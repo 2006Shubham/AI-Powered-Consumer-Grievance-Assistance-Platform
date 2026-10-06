@@ -10,13 +10,33 @@ from backend.complaints.models import (
     ComplaintCreateInput,
     ComplaintUpdateInput,
     ComplaintResponse,
-    ComplaintExportFormat
+    ComplaintExportFormat,
+    CompanyLookupInput,
+    CompanyLookupResponse
 )
+from backend.complaints.company_directory import lookup_company_info
 from backend.complaints.service import ComplaintService
 
 logger = logging.getLogger("complaint_router")
 router = APIRouter(prefix="/cases/{case_id}/complaint", tags=["AI Complaint Generator"])
 service = ComplaintService()
+
+@router.post("/company-lookup", response_model=CompanyLookupResponse)
+async def lookup_company(
+    case_id: str,
+    input_data: CompanyLookupInput,
+    current_user: UserResponse = Depends(get_optional_current_user)
+):
+    try:
+        res = lookup_company_info(
+            company_name=input_data.company_name,
+            city=input_data.city or "",
+            state=input_data.state or ""
+        )
+        return res
+    except Exception as e:
+        logger.error(f"Company lookup failed: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to lookup company: {str(e)}")
 
 @router.post("/generate", response_model=ComplaintResponse, status_code=status.HTTP_201_CREATED)
 async def generate_complaint(
@@ -27,7 +47,12 @@ async def generate_complaint(
     try:
         user_id = str(current_user.id)
         custom_inst = input_data.custom_instructions if input_data else None
-        doc = await service.generate_complaint(case_id, user_id, custom_instructions=custom_inst)
+        doc = await service.generate_complaint(
+            case_id=case_id,
+            user_id=user_id,
+            custom_instructions=custom_inst,
+            input_data=input_data
+        )
         return doc
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))

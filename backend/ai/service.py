@@ -69,6 +69,14 @@ class AIService:
         if analysis.key_facts:
             update_fields["key_facts"] = analysis.key_facts
 
+        # Check existing case doc to fill vendor and amount if not already set
+        case_doc = await self.db.cases.find_one({"_id": safe_c_id})
+        if case_doc:
+            if analysis.vendor_name and (not case_doc.get("vendor_name") or case_doc.get("vendor_name") == "Company / Merchant"):
+                update_fields["vendor_name"] = analysis.vendor_name
+            if analysis.claimed_amount and (not case_doc.get("claimed_amount") or case_doc.get("claimed_amount") == "₹25,000"):
+                update_fields["claimed_amount"] = analysis.claimed_amount
+
         await self.db.cases.update_one(
             {"_id": safe_c_id},
             {"$set": update_fields}
@@ -84,8 +92,22 @@ class AIService:
         
         return analysis
 
-    async def generate_follow_up_questions(self, case_id: str, summary: str, missing_info: List[str]) -> FollowUpQuestions:
-        user_prompt = build_follow_up_user_prompt(summary, missing_info)
+    async def generate_follow_up_questions(
+        self,
+        case_id: str,
+        summary: str,
+        missing_info: List[str],
+        full_description: str = "",
+        vendor_name: str = "",
+        claimed_amount: str = ""
+    ) -> FollowUpQuestions:
+        user_prompt = build_follow_up_user_prompt(
+            summary=summary,
+            missing_info=missing_info,
+            full_description=full_description,
+            vendor_name=vendor_name,
+            claimed_amount=claimed_amount
+        )
         try:
             json_data = await self.provider.generate_json(FOLLOW_UP_SYSTEM_PROMPT, user_prompt)
             follow_ups = FollowUpQuestions(**json_data)
@@ -96,12 +118,37 @@ class AIService:
             logger.warning(f"Groq follow-up question generation failed ({e}). Using standard follow-up questions.")
             follow_ups = FollowUpQuestions(
                 questions=[
-                    "When did you purchase or receive the product or service?",
-                    "Do you have a purchase receipt, invoice, or transaction ID?",
-                    "Did the seller or company provide a written refusal?",
-                    "What specific resolution are you seeking (refund, replacement, or repair)?"
+                    "Do you have a copy of the original purchase invoice or order ID?",
+                    "Did the seller or service center provide a written job sheet or refusal email?"
                 ]
             )
+
+        # Programmatic dynamic post-filtering: never ask for details already present
+        combined_context = f"{full_description} {vendor_name or ''} {claimed_amount or ''} {summary}".lower()
+        filtered: List[str] = []
+        for q in follow_ups.questions:
+            ql = q.lower()
+            # If vendor or platform is mentioned, drop questions asking where bought / seller name
+            if any(v in combined_context for v in ["flipkart", "amazon", "croma", "hp", "samsung", "apple", "acer", "hdfc", "sbi", "reliance"]):
+                if any(p in ql for p in ["where did you buy", "which store", "who is the seller", "seller or company", "merchant name", "which platform", "name of the seller"]):
+                    continue
+            # If price/amount is mentioned, drop questions asking how much paid
+            if any(k in combined_context for k in ["₹", "rs", "inr", "30000", "30,000", "price", "amount", "cost", "paid", "worth"]):
+                if any(p in ql for p in ["how much did you pay", "purchase price", "cost of the product", "amount paid", "disputed amount"]):
+                    continue
+            # If preferred resolution is mentioned, drop questions asking what resolution
+            if any(k in combined_context for k in ["refund", "replacement", "repair", "fix", "return", "chargeback"]):
+                if any(p in ql for p in ["what resolution", "preferred resolution", "what outcome", "would you prefer (refund"]):
+                    continue
+            filtered.append(q)
+
+        if not filtered:
+            filtered = [
+                "Do you have a copy of the official purchase receipt or order invoice?",
+                "Did the authorized service center provide an inspection job-sheet or written refusal?"
+            ]
+
+        follow_ups.questions = filtered[:3]
         
         settings = get_settings()
         now = datetime.now(timezone.utc)
@@ -112,7 +159,7 @@ class AIService:
             "analysis_type": "follow_up_questions",
             "provider": "groq",
             "model": settings.groq_model,
-            "prompt_version": "follow-up-v1",
+            "prompt_version": "follow-up-v2",
             "result": follow_ups.model_dump(),
             "created_at": now
         })

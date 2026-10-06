@@ -71,7 +71,7 @@ async def get_follow_up_questions(
     )
     
     summary = case_doc.get("description", "")[:200]
-    missing_info = ["purchase_date", "seller_name", "preferred_resolution"]
+    missing_info = ["invoice_receipt", "denial_reason"]
     
     if latest_analysis and "result" in latest_analysis:
         res = latest_analysis["result"]
@@ -79,7 +79,14 @@ async def get_follow_up_questions(
         missing_info = res.get("missing_information", missing_info)
         
     ai_service = AIService(db)
-    follow_ups = await ai_service.generate_follow_up_questions(case_id, summary, missing_info)
+    follow_ups = await ai_service.generate_follow_up_questions(
+        case_id=case_id,
+        summary=summary,
+        missing_info=missing_info,
+        full_description=case_doc.get("description", ""),
+        vendor_name=case_doc.get("vendor_name", ""),
+        claimed_amount=case_doc.get("claimed_amount", "")
+    )
     return follow_ups
 
 @router.post("/answers")

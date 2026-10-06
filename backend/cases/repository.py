@@ -6,6 +6,50 @@ from backend.cases.models import CaseCreate, CaseStatusEnum
 
 from backend.shared.database import safe_object_id
 
+import re
+
+def extract_case_metadata(description: str, title: str = ""):
+    text = f"{title} {description}".strip()
+    
+    # 1. Claimed Amount Extraction
+    amount = None
+    m_curr = re.search(r'(?:₹|rs\.?|inr)\s*([0-9]{1,3}(?:,[0-9]{2,3})+|[0-9]{3,7})', text, re.IGNORECASE)
+    if m_curr:
+        try:
+            val = int(m_curr.group(1).replace(",", ""))
+            amount = f"₹{val:,}"
+        except ValueError:
+            pass
+
+    if not amount:
+        m_ctx = re.search(r'\b(?:bought|paid|spent|cost|worth|for|price of)\s+(?:for\s+)?(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{2,3})+|[0-9]{3,7})\b', text, re.IGNORECASE)
+        if m_ctx:
+            try:
+                val = int(m_ctx.group(1).replace(",", ""))
+                if val >= 100:
+                    amount = f"₹{val:,}"
+            except ValueError:
+                pass
+
+    # 2. Known Vendor Extraction
+    vendor = None
+    known_vendors = [
+        "HP India", "HP", "Hewlett Packard",
+        "Acer", "Samsung", "Apple", "Flipkart", "Amazon.in", "Amazon",
+        "HDFC Bank", "HDFC", "SBI", "ICICI Bank", "Axis Bank",
+        "Tata Croma", "Croma", "Reliance Digital", "OnePlus", "Dell",
+        "Lenovo", "Asus", "Xiaomi", "Boat", "Noise", "Myntra", "Swiggy", "Zomato"
+    ]
+    detected = []
+    for v in known_vendors:
+        if re.search(r'\b' + re.escape(v) + r'\b', text, re.IGNORECASE):
+            if not any(v in existing for existing in detected):
+                detected.append(v)
+    if detected:
+        vendor = " / ".join(detected[:2])
+
+    return vendor, amount
+
 class CaseRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db.cases
@@ -14,6 +58,12 @@ class CaseRepository:
     async def create_case(self, user_id: str, case_data: CaseCreate) -> dict:
         now = datetime.now(timezone.utc)
         u_id = safe_object_id(user_id)
+
+        # Extract vendor and amount if not supplied explicitly
+        auto_vendor, auto_amount = extract_case_metadata(case_data.description, case_data.title)
+        resolved_vendor = case_data.vendor_name.strip() if case_data.vendor_name else auto_vendor
+        resolved_amount = case_data.claimed_amount.strip() if case_data.claimed_amount else auto_amount
+
         doc = {
             "user_id": u_id,
             "title": case_data.title.strip(),
@@ -21,8 +71,8 @@ class CaseRepository:
             "category": case_data.category.lower().strip() if case_data.category else "general_service",
             "issue_type": case_data.issue_type.lower().strip() if case_data.issue_type else "other",
             "desired_resolution": case_data.desired_resolution.lower().strip() if case_data.desired_resolution else "unknown",
-            "vendor_name": case_data.vendor_name.strip() if case_data.vendor_name else None,
-            "claimed_amount": case_data.claimed_amount.strip() if case_data.claimed_amount else None,
+            "vendor_name": resolved_vendor,
+            "claimed_amount": resolved_amount,
             "status": CaseStatusEnum.PREPARING.value,
             "user_answers": {},
             "created_at": now,
