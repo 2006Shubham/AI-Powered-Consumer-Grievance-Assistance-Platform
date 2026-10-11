@@ -100,7 +100,7 @@ JWT_SECRET=replace-with-a-long-random-secret
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 GROQ_API_KEY=gsk_your_actual_key
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-20b
 STORAGE_PATH=storage
 FAISS_INDEX_PATH=storage/faiss_index.bin
 ```

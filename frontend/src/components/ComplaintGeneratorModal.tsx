@@ -216,7 +216,13 @@ export const ComplaintGeneratorModal: React.FC<ComplaintGeneratorModalProps> = (
     fetch(url, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then(res => res.blob())
+      .then(async res => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.detail || `Download failed with status ${res.status}`);
+        }
+        return res.blob();
+      })
       .then(blob => {
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');

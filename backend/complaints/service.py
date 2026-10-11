@@ -289,13 +289,13 @@ def generate_professional_legal_pdf(content: str, title: str) -> bytes:
         
         # Deep slate header banner
         page.draw_rect(fitz.Rect(0, 0, page_width, 48), color=(0.06, 0.09, 0.16), fill=(0.06, 0.09, 0.16))
-        page.insert_text(fitz.Point(40, 24), "FORMAL CONSUMER DEMAND NOTICE & LEGAL PETITION", fontsize=10, fontname="helv-bold", color=(1, 1, 1))
+        page.insert_text(fitz.Point(40, 24), "FORMAL CONSUMER DEMAND NOTICE & LEGAL PETITION", fontsize=10, fontname="hebo", color=(1, 1, 1))
         page.insert_text(fitz.Point(40, 38), "Statutory Consumer Protection Act 2019 Redressal Framework", fontsize=7.5, fontname="helv", color=(0.8, 0.85, 0.9))
         page.insert_text(fitz.Point(page_width - 140, 28), f"Date: {datetime.utcnow().strftime('%Y-%m-%d')}", fontsize=7.5, fontname="helv", color=(0.9, 0.9, 0.9))
 
         # Footer separator and text
         page.draw_line(fitz.Point(40, page_height - 35), fitz.Point(page_width - 40, page_height - 35), color=(0.8, 0.8, 0.8), width=0.5)
-        page.insert_text(fitz.Point(40, page_height - 22), "CONFIDENTIAL LEGAL NOTICE • GENERATED VIA GRIEVANCEAI PROTECTION PLATFORM", fontsize=6.5, fontname="helv-bold", color=(0.4, 0.4, 0.4))
+        page.insert_text(fitz.Point(40, page_height - 22), "CONFIDENTIAL LEGAL NOTICE - GENERATED VIA GRIEVANCEAI PROTECTION PLATFORM", fontsize=6.5, fontname="hebo", color=(0.4, 0.4, 0.4))
         return page
 
     page = create_page()
@@ -303,9 +303,28 @@ def generate_professional_legal_pdf(content: str, title: str) -> bytes:
     width = page_width - (2 * margin_x)
     y_cursor = 65
 
+    def normalize_pdf_text(value: str) -> str:
+        """Map characters unsupported by PDF base fonts to readable ASCII equivalents."""
+        replacements = str.maketrans({
+            "\u00a0": " ",
+            "\u2010": "-",
+            "\u2011": "-",
+            "\u2012": "-",
+            "\u2013": "-",
+            "\u2014": "-",
+            "\u2018": "'",
+            "\u2019": "'",
+            "\u201c": '"',
+            "\u201d": '"',
+            "\u2026": "...",
+            "\u20b9": "Rs.",
+            "\u2022": "-",
+        })
+        return value.translate(replacements).encode("ascii", "replace").decode("ascii")
+
     paragraphs = content.split('\n')
     for p in paragraphs:
-        raw_text = p.strip()
+        raw_text = normalize_pdf_text(p.strip())
         if not raw_text:
             y_cursor += 6
             continue
@@ -320,35 +339,26 @@ def generate_professional_legal_pdf(content: str, title: str) -> bytes:
             continue
 
         # Parse Markdown headers & lists
-        if raw_text.startswith("# "):
-            font_size = 13
-            font_name = "helv-bold"
-            text_color = (0.06, 0.09, 0.16)
-            clean_text = raw_text[2:].replace("**", "").strip()
-            space_before, space_after = 10, 4
-        elif raw_text.startswith("## "):
-            font_size = 11.5
-            font_name = "helv-bold"
-            text_color = (0.1, 0.15, 0.25)
-            clean_text = raw_text[3:].replace("**", "").strip()
-            space_before, space_after = 8, 4
-        elif raw_text.startswith("### "):
-            font_size = 10.5
-            font_name = "helv-bold"
-            text_color = (0.15, 0.2, 0.3)
-            clean_text = raw_text[4:].replace("**", "").strip()
-            space_before, space_after = 6, 3
+        heading_match = re.match(r"^(#{1,6})\s+(.+)$", raw_text)
+        if heading_match:
+            heading_level = len(heading_match.group(1))
+            clean_text = heading_match.group(2).replace("**", "").strip()
+            font_size = max(10, 14 - (heading_level * 0.75))
+            font_name = "hebo"
+            text_color = (0.06 + heading_level * 0.015, 0.09 + heading_level * 0.015, 0.16 + heading_level * 0.02)
+            space_before = max(4, 12 - heading_level)
+            space_after = 4
         elif raw_text.startswith("- ") or raw_text.startswith("* ") or re.match(r'^\d+\.\s', raw_text):
             font_size = 9.5
             font_name = "helv"
             text_color = (0.15, 0.15, 0.15)
-            bullet_char = "• " if not raw_text[0].isdigit() else ""
+            bullet_char = "- " if not raw_text[0].isdigit() else ""
             clean_text = bullet_char + re.sub(r'^[-\*\d\.]+\s*', '', raw_text).replace("**", "").strip()
             space_before, space_after = 2, 2
         else:
             is_bold_section = raw_text.isupper() or raw_text.startswith("TO:") or raw_text.startswith("SUBJECT:") or raw_text.startswith("DEMAND:") or raw_text.startswith("NOTICE")
             font_size = 9.5 if not is_bold_section else 10
-            font_name = "helv-bold" if is_bold_section else "helv"
+            font_name = "hebo" if is_bold_section else "helv"
             text_color = (0.06, 0.09, 0.16) if is_bold_section else (0.15, 0.15, 0.15)
             clean_text = raw_text.replace("**", "").strip()
             space_before, space_after = 3, 3
